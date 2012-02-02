@@ -125,6 +125,9 @@
 #  if defined(X86_64)
 #     define LINUX_X86_64
 #  endif
+#  if defined(X32)
+#     define LINUX_X32
+#  endif
 #  if defined(MIPS) && _MIPS_SIM == _MIPS_SIM_ABI32
 #     define LINUX_MIPSO32
 #  endif
@@ -168,7 +171,8 @@
 #  include <sys/pioctl.h>
 # endif
 #else /* !USE_PROCFS */
-# if (defined(LINUXSPARC) || defined(LINUX_X86_64) || defined(LINUX_ARM) || defined(LINUX_AVR32)) && defined(__GLIBC__)
+# if (defined(LINUXSPARC) || defined(LINUX_X86_64) || defined(LINUX_X32) \
+      || defined(LINUX_ARM) || defined(LINUX_AVR32)) && defined(__GLIBC__)
 #  include <sys/ptrace.h>
 # else
 /* Work around awkward prototype in ptrace.h. */
@@ -193,7 +197,7 @@ extern int ptrace(int, int, char *, int, ...);
 #define	PTRACE_PEEKUSER	PTRACE_PEEKUSR
 #define	PTRACE_POKEUSER	PTRACE_POKEUSR
 #endif
-#if defined(X86_64) || defined(I386)
+#if defined(X86_64) || defined(X32) || defined(I386)
 /* For struct pt_regs. x86 strace uses PTRACE_GETREGS.
  * PTRACE_GETREGS returns registers in the layout of this struct.
  */
@@ -262,9 +266,16 @@ extern int ptrace(int, int, char *, int, ...);
 
 #ifdef X86_64
 #undef SUPPORTED_PERSONALITIES
-#define SUPPORTED_PERSONALITIES 2
+#define SUPPORTED_PERSONALITIES 3
 #define PERSONALITY0_WORDSIZE 8
 #define PERSONALITY1_WORDSIZE 4
+#define PERSONALITY2_WORDSIZE 4
+#endif
+
+#ifdef X32
+#undef SUPPORTED_PERSONALITIES
+#define SUPPORTED_PERSONALITIES 1
+#define PERSONALITY0_WORDSIZE 4
 #endif
 
 #ifdef ARM
@@ -423,7 +434,7 @@ struct tcb {
 	int u_error;		/* Error code */
 	long scno;		/* System call number */
 	long u_arg[MAX_ARGS];	/* System call arguments */
-#if defined (LINUX_MIPSN32)
+#if defined (LINUX_MIPSN32) || defined(LINUX_X32)
 	long long ext_arg[MAX_ARGS];	/* System call arguments */
 #endif
 	long u_rval;		/* (first) return value */

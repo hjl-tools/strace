@@ -343,7 +343,7 @@ int
 sys_mmap64(struct tcb *tcp)
 {
 	if (entering(tcp)) {
-#if !defined(LINUX) || defined(ALPHA)
+#if !defined(LINUX) || defined(ALPHA) || defined(X32)
 		long *u_arg = tcp->u_arg;
 #else
 		long u_arg[7];
@@ -372,7 +372,7 @@ sys_mmap64(struct tcb *tcp)
 		tprints(", ");
 		printfd(tcp, u_arg[4]);
 		/* offset */
-#if !defined(LINUX) || defined(ALPHA)
+#if !defined(LINUX) || defined(ALPHA) || defined(X32)
 		printllval(tcp, ", %#llx", 5);
 #else
 		/* NOTE: not verified that [5] and [6] should be used.

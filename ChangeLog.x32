@@ -1,0 +1,66 @@
+2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac: Support X32.
+
+	* defs.h (LINUX_X32): New.
+	 (SUPPORTED_PERSONALITIES): Set to 3 for X86_64.  Defined to 1
+	 for X32.
+	(PERSONALITY2_WORDSIZE): Set to 4 for X86_64.
+	(PERSONALITY0_WORDSIZE): Defined to 4 for X32.
+	(tcb): Add ext_arg for LINUX_X32.
+
+	* file.c (stat): New for X32.
+	(printstat64): Check current_personality != 1 for X86_64.
+
+	* io.c (sys_pread): Defined only if X32 isn't defined.
+	(sys_pwrite): Likewise.
+
+	* ipc.c (indirect_ipccall): Check current_personality == 1
+	for X86_64.
+
+	* mem.c (sys_mmap64): Also use tcp->u_arg for X32.  Print NULL
+	for zero address.  Call printllval for offset for X32.
+
+	* pathtrace.c (pathtrace_match): Don't check sys_old_mmap for
+	X32.
+
+	* process.c (ARG_FLAGS): Defined for X32.
+	(ARG_STACK): Likewise.
+	(ARG_PTID): Likewise.
+	(change_syscall): Handle X32.
+	(struct_user_offsets): Support X32.
+	(sys_arch_prctl): Likewise.
+
+	* signal.c: Include <asm/sigcontext.h> for X32.
+	(SA_RESTORER): Also define for X32.
+
+	* syscall.c (update_personality): Support X32 for X86_64.
+	(is_restart_error): Likewise.
+	(syscall_fixup_on_sysenter): Likewise.
+	(syscall_enter): Likewise.
+	(get_syscall_result): Likewise.
+	(get_error): Likewise.
+	(__X32_SYSCALL_BIT): Define if not defined.
+	(__X32_SYSCALL_MASK): Likewise.
+	(get_scno): Check DS register value for X32.  Use
+	__X32_SYSCALL_MASK on X32 system calls.
+
+	* util.c (printllval): Use ext_arg for LINUX_X32.
+	(printcall): Support X32.
+	(arg0_offset): Likewise.
+	(arg1_offset): Likewise.
+
+	* Makefile.am (EXTRA_DIST): Add linux/x32/errnoent.h,
+	linux/x32/ioctlent.h.in, linux/x32/signalent.h,
+	linux/x32/syscallent.h, linux/x86_64/errnoent2.h,
+	linux/x86_64/ioctlent2.h, linux/x86_64/signalent2.h and
+	linux/x86_64/syscallent2.h.
+
+	* linux/x32/errnoent.h: New.
+	* linux/x32/ioctlent.h.in: Likewise.
+	* linux/x32/signalent.h: Likewise.
+	* linux/x32/syscallent.h: Likewise.
+	* linux/x86_64/errnoent2.h: Likewise.
+	* linux/x86_64/ioctlent2.h: Likewise.
+	* linux/x86_64/signalent2.h: Likewise.
+	* linux/x86_64/syscallent2.h: Likewise.

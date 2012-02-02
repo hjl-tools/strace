@@ -572,7 +572,7 @@ extern void print_ldt_entry();
 #  define ARG_PTID	2
 #  define ARG_CTID	3
 #  define ARG_TLS	4
-# elif defined X86_64 || defined ALPHA
+# elif defined X86_64 || defined X32 || defined ALPHA
 #  define ARG_FLAGS	0
 #  define ARG_STACK	1
 #  define ARG_PTID	2
@@ -655,7 +655,7 @@ change_syscall(struct tcb *tcp, int new)
 	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(ORIG_EAX * 4), new) < 0)
 		return -1;
 	return 0;
-#elif defined(X86_64)
+#elif defined(X86_64) || defined(X32)
 	/* Attempt to make vfork into fork, which we can follow. */
 	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(ORIG_RAX * 8), new) < 0)
 		return -1;
@@ -2387,7 +2387,7 @@ const struct xlat struct_user_offsets[] = {
 	{ 4*EFL,		"4*EFL"					},
 	{ 4*UESP,		"4*UESP"				},
 	{ 4*SS,			"4*SS"					},
-#   elif defined(X86_64)
+#   elif defined(X86_64) || defined(X32)
 	{ 8*R15,		"8*R15"					},
 	{ 8*R14,		"8*R14"					},
 	{ 8*R13,		"8*R13"					},
@@ -2922,7 +2922,7 @@ const struct xlat struct_user_offsets[] = {
 #    if !defined(S390) && !defined(S390X) && !defined(MIPS) && !defined(SPARC64) && !defined(AVR32) && !defined(BFIN) && !defined(TILE)
 	{ uoff(u_fpvalid),	"offsetof(struct user, u_fpvalid)"	},
 #    endif
-#    if defined(I386) || defined(X86_64)
+#    if defined(I386) || defined(X86_64) || defined(X32)
 	{ uoff(i387),		"offsetof(struct user, i387)"		},
 #    endif
 #    if defined(M68K)
@@ -2952,7 +2952,7 @@ const struct xlat struct_user_offsets[] = {
 #    endif
 	{ uoff(magic),		"offsetof(struct user, magic)"		},
 	{ uoff(u_comm),		"offsetof(struct user, u_comm)"		},
-#    if defined(I386) || defined(X86_64)
+#    if defined(I386) || defined(X86_64) || defined(X32)
 	{ uoff(u_debugreg),	"offsetof(struct user, u_debugreg)"	},
 #    endif
 #   endif /* !defined(many arches) */
@@ -3406,7 +3406,7 @@ sys_sched_get_priority_min(struct tcb *tcp)
 	return 0;
 }
 
-# ifdef X86_64
+# if defined X86_64 || defined X32
 # include <asm/prctl.h>
 
 static const struct xlat archvals[] = {
@@ -3440,7 +3440,7 @@ sys_arch_prctl(struct tcb *tcp)
 	}
 	return 0;
 }
-# endif /* X86_64 */
+# endif /* X86_64 || X32 */
 
 
 int

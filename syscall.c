@@ -285,9 +285,15 @@ update_personality(struct tcb *tcp, int personality)
 		return;
 	tcp->currpers = personality;
 
-#if defined(POWERPC64) || defined(X86_64)
+#if defined(POWERPC64)
 	if (!qflag) {
 		static const char *const names[] = {"64 bit", "32 bit"};
+		fprintf(stderr, "[ Process PID=%d runs in %s mode. ]\n",
+			tcp->pid, names[personality]);
+	}
+#elif defined(X86_64)
+	if (!qflag) {
+		static const char *const names[] = {"64 bit", "32 bit", "x32"};
 		fprintf(stderr, "[ Process PID=%d runs in %s mode. ]\n",
 			tcp->pid, names[personality]);
 	}
@@ -732,7 +738,7 @@ is_restart_error(struct tcb *tcp)
 #ifdef LINUX
 # if defined(I386)
 struct pt_regs i386_regs;
-# elif defined(X86_64)
+# elif defined(X86_64) || defined(X32)
 /*
  * On 32 bits, pt_regs and user_regs_struct are the same,
  * but on 64 bits, user_regs_struct has six more fields:
@@ -914,19 +920,39 @@ get_scno(struct tcb *tcp)
 	if (ptrace(PTRACE_GETREGS, tcp->pid, NULL, (long) &i386_regs) < 0)
 		return -1;
 	scno = i386_regs.orig_eax;
-# elif defined (X86_64)
+# elif defined (X86_64) || defined(X32)
+#  ifndef __X32_SYSCALL_BIT
+#   define __X32_SYSCALL_BIT	0x40000000
+#  endif
+#  ifndef __X32_SYSCALL_MASK
+#   define __X32_SYSCALL_MASK	__X32_SYSCALL_BIT
+#  endif
+
+#  ifdef X86_64
 	int currpers;
+#  endif
 	if (ptrace(PTRACE_GETREGS, tcp->pid, NULL, (long) &x86_64_regs) < 0)
 		return -1;
 	scno = x86_64_regs.orig_rax;
 
+#  ifdef X32
+	scno &= ~__X32_SYSCALL_MASK;
+#  else
 	/* Check CS register value. On x86-64 linux it is:
 	 *	0x33	for long mode (64 bit)
 	 *	0x23	for compatibility mode (32 bit)
+	 * Check DS register value. On x86-64 linux it is:
+	 *	0x2b	for x32 mode (x86-64 in 32 bit)
 	 */
 	switch (x86_64_regs.cs) {
 		case 0x23: currpers = 1; break;
-		case 0x33: currpers = 0; break;
+		case 0x33:
+			if (x86_64_regs.ds == 0x2b) {
+				currpers = 2;
+				scno &= ~__X32_SYSCALL_MASK;
+			} else
+				currpers = 0;
+			break;
 		default:
 			fprintf(stderr, "Unknown value CS=0x%08X while "
 				 "detecting personality of process "
@@ -966,6 +992,7 @@ get_scno(struct tcb *tcp)
 	}
 #  endif
 	update_personality(tcp, currpers);
+#  endif
 # elif defined(IA64)
 #	define IA64_PSR_IS	((long)1 << 34)
 	if (upeek(tcp, PT_CR_IPSR, &psr) >= 0)
@@ -1298,7 +1325,7 @@ syscall_fixup_on_sysenter(struct tcb *tcp)
 			fprintf(stderr, "not a syscall entry (eax = %ld)\n", i386_regs.eax);
 		return 0;
 	}
-#elif defined (X86_64)
+#elif defined (X86_64) || defined (X32)
 	{
 		long rax = x86_64_regs.rax;
 		if (current_personality == 1)
@@ -1545,16 +1572,24 @@ syscall_enter(struct tcb *tcp)
 	for (i = 0; i < nargs; ++i)
 		if (upeek(tcp, REG_GENERAL(syscall_regs[i]), &tcp->u_arg[i]) < 0)
 			return -1;
-# elif defined(X86_64)
+# elif defined(X86_64) || defined(X32)
 	(void)i;
 	(void)nargs;
-	if (current_personality == 0) { /* x86-64 ABI */
+	if (current_personality != 1) { /* x86-64 or x32 ABI */
 		tcp->u_arg[0] = x86_64_regs.rdi;
 		tcp->u_arg[1] = x86_64_regs.rsi;
 		tcp->u_arg[2] = x86_64_regs.rdx;
 		tcp->u_arg[3] = x86_64_regs.r10;
 		tcp->u_arg[4] = x86_64_regs.r8;
 		tcp->u_arg[5] = x86_64_regs.r9;
+#  ifdef X32
+		tcp->ext_arg[0] = x86_64_regs.rdi;
+		tcp->ext_arg[1] = x86_64_regs.rsi;
+		tcp->ext_arg[2] = x86_64_regs.rdx;
+		tcp->ext_arg[3] = x86_64_regs.r10;
+		tcp->ext_arg[4] = x86_64_regs.r8;
+		tcp->ext_arg[5] = x86_64_regs.r9;
+#  endif
 	} else { /* i386 ABI */
 		/* Sign-extend lower 32 bits */
 		tcp->u_arg[0] = (long)(int)x86_64_regs.rbx;
@@ -1894,7 +1929,7 @@ get_syscall_result(struct tcb *tcp)
 # elif defined (I386)
 	if (ptrace(PTRACE_GETREGS, tcp->pid, NULL, (long) &i386_regs) < 0)
 		return -1;
-# elif defined (X86_64)
+# elif defined (X86_64) || defined (X32)
 	if (ptrace(PTRACE_GETREGS, tcp->pid, NULL, (long) &x86_64_regs) < 0)
 		return -1;
 # elif defined(IA64)
@@ -2070,13 +2105,16 @@ get_error(struct tcb *tcp)
 	else {
 		tcp->u_rval = i386_regs.eax;
 	}
-# elif defined(X86_64)
+# elif defined(X86_64) || defined(X32)
 	if (check_errno && is_negated_errno(x86_64_regs.rax)) {
 		tcp->u_rval = -1;
 		u_error = -x86_64_regs.rax;
 	}
 	else {
 		tcp->u_rval = x86_64_regs.rax;
+#  ifdef X32
+		tcp->u_lrval = x86_64_regs.rax;
+#  endif
 	}
 # elif defined(IA64)
 	if (ia32) {
