@@ -487,7 +487,8 @@ sys_mq_open(struct tcb *tcp)
 				tprintf("{ ??? }");
 			else
 				tprintf("{mq_maxmsg=%ld, mq_msgsize=%ld}",
-					attr.mq_maxmsg, attr.mq_msgsize);
+					(long) attr.mq_maxmsg,
+					(long) attr.mq_msgsize);
 # endif
 		}
 	}
@@ -546,7 +547,8 @@ printmqattr(struct tcb *tcp, long addr)
 		tprintf("{mq_flags=");
 		tprint_open_modes(attr.mq_flags);
 		tprintf(", mq_maxmsg=%ld, mq_msgsize=%ld, mq_curmsg=%ld}",
-			attr.mq_maxmsg, attr.mq_msgsize, attr.mq_curmsgs);
+			(long) attr.mq_maxmsg, (long) attr.mq_msgsize,
+			(long) attr.mq_curmsgs);
 # endif
 	}
 }
