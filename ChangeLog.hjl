@@ -1,5 +1,14 @@
 2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
 
+	* count.c (call_summary_pers): Cast to long.
+	* ipc.c (sys_mq_open): Likewise.
+	(printmqattr): Likewise.
+	* quota.c (decode_cmd_data): Likewise.
+	* resource.c (sys_sysinfo): Likewise.
+	* time.c (tprint_timex): Likewise.
+
+2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
+
 	* syscall.c (dumpio): Check sys_pread64 and sys_pwrite64 only if
 	HAVE_LONG_LONG_OFF_T isn't defined.
 
