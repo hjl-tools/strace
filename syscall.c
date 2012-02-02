@@ -2303,7 +2303,9 @@ dumpio(struct tcb *tcp)
 	if (qual_flags[tcp->u_arg[0]] & QUAL_READ) {
 		if (sysent[tcp->scno].sys_func == sys_read ||
 		    sysent[tcp->scno].sys_func == sys_pread ||
+#ifndef HAVE_LONG_LONG_OFF_T
 		    sysent[tcp->scno].sys_func == sys_pread64 ||
+#endif
 		    sysent[tcp->scno].sys_func == sys_recv ||
 		    sysent[tcp->scno].sys_func == sys_recvfrom)
 			dumpstr(tcp, tcp->u_arg[1], tcp->u_rval);
@@ -2314,7 +2316,9 @@ dumpio(struct tcb *tcp)
 	if (qual_flags[tcp->u_arg[0]] & QUAL_WRITE) {
 		if (sysent[tcp->scno].sys_func == sys_write ||
 		    sysent[tcp->scno].sys_func == sys_pwrite ||
+#ifndef HAVE_LONG_LONG_OFF_T
 		    sysent[tcp->scno].sys_func == sys_pwrite64 ||
+#endif
 		    sysent[tcp->scno].sys_func == sys_send ||
 		    sysent[tcp->scno].sys_func == sys_sendto)
 			dumpstr(tcp, tcp->u_arg[1], tcp->u_arg[2]);
