@@ -277,6 +277,7 @@ sys_sendfile(struct tcb *tcp)
 #define PREAD_OFFSET_ARG 3
 #endif
 
+#if !defined X32
 int
 sys_pread(struct tcb *tcp)
 {
@@ -306,6 +307,7 @@ sys_pwrite(struct tcb *tcp)
 	}
 	return 0;
 }
+#endif
 
 int
 sys_sendfile(struct tcb *tcp)

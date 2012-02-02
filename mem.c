@@ -341,22 +341,22 @@ int
 sys_mmap64(struct tcb *tcp)
 {
 #ifdef linux
-#ifdef ALPHA
+#if defined ALPHA || defined X32
 	long *u_arg = tcp->u_arg;
-#else /* !ALPHA */
+#else /* !ALPHA && !X32 */
 	long u_arg[7];
-#endif /* !ALPHA */
+#endif /* !ALPHA && !X32 */
 #else /* !linux */
 	long *u_arg = tcp->u_arg;
 #endif /* !linux */
 
 	if (entering(tcp)) {
 #ifdef linux
-#ifndef ALPHA
+#if !defined ALPHA && !defined X32
 		if (umoven(tcp, tcp->u_arg[0], sizeof u_arg,
 				(char *) u_arg) == -1)
 			return 0;
-#endif /* ALPHA */
+#endif /* !ALPHA && !X32 */
 #endif /* linux */
 
 		/* addr */

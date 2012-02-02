@@ -8,6 +8,8 @@ AM_INIT_AUTOMAKE([foreign check-news dist-xz no-dist-gzip silent-rules])
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
 
+AC_PROG_CC
+
 AC_MSG_CHECKING([for supported operating system])
 case "$host_os" in
 *linux*)
@@ -112,8 +114,13 @@ sh*)
 	AC_DEFINE([SH], 1, [Define for the SH architecture.])
 	;;
 x86?64*)
-	arch=x86_64
-	AC_DEFINE([X86_64], 1, [Define for the AMD x86-64 architecture.])
+	if echo __LP64__ | ${CC-cc} $CFLAGS $CPPFLAGS -E - | grep __LP64__ > /dev/null; then
+		arch=x32
+		AC_DEFINE([X32], 1, [Define for the 32bit AMD x86-64 architecture.])
+	else
+		arch=x86_64
+		AC_DEFINE([X86_64], 1, [Define for the 64bit AMD x86-64 architecture.])
+	fi
 	;;
 cris|crisv10)
 	arch=crisv10
@@ -144,11 +151,11 @@ AC_SUBST(arch)
 AM_CONDITIONAL([LINUX], [test x$opsys = xlinux])
 AM_CONDITIONAL([I386], [test x$arch = xi386])
 AM_CONDITIONAL([X86_64], [test x$arch = xx86_64])
+AM_CONDITIONAL([X32], [test x$arch = xx32])
 AM_CONDITIONAL([SUNOS4], [test x$opsys = xsunos4])
 AM_CONDITIONAL([SVR4], [test x$opsys = xsvr4])
 AM_CONDITIONAL([FREEBSD], [test x$opsys = xfreebsd])
 
-AC_PROG_CC
 AC_GNU_SOURCE
 
 AC_INCLUDEDIR

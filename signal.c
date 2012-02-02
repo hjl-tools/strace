@@ -85,7 +85,7 @@ typedef struct {
 	int			si_mask;
 } m_siginfo_t;
 #elif defined HAVE_ASM_SIGCONTEXT_H
-#if !defined(IA64) && !defined(X86_64)
+#if !defined(IA64) && !defined(X86_64) && !defined(X32)
 #include <asm/sigcontext.h>
 #endif /* !IA64 && !X86_64 */
 #else /* !HAVE_ASM_SIGCONTEXT_H */
@@ -176,7 +176,7 @@ static const struct xlat sigvec_flags[] = {
 
 #ifdef HAVE_SIGACTION
 
-#if defined LINUX && (defined I386 || defined X86_64)
+#if defined LINUX && (defined I386 || defined X86_64 || defined X32)
 /* The libc headers do not define this constant since it should only be
    used by the implementation.  So wwe define it here.  */
 # ifndef SA_RESTORER
