@@ -1,5 +1,9 @@
 2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
 
+	* resource.c (RLIM64_INFINITY): Define only if it isn't defined.
+
+2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
+
 	* count.c (call_summary_pers): Cast to long.
 	* ipc.c (sys_mq_open): Likewise.
 	(printmqattr): Likewise.
