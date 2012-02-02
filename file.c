@@ -1241,7 +1241,8 @@ printstat64(struct tcb *tcp, long addr)
 }
 #endif /* HAVE_STAT64 */
 
-#if defined(LINUX) && defined(HAVE_STRUCT___OLD_KERNEL_STAT)
+#if defined(LINUX) && defined(HAVE_STRUCT___OLD_KERNEL_STAT) \
+    && !defined(HAVE_LONG_LONG_OFF_T)
 static void
 convertoldstat(const struct __old_kernel_stat *oldbuf, struct stat *newbuf)
 {
@@ -1358,7 +1359,8 @@ sys_newfstatat(struct tcb *tcp)
 }
 #endif
 
-#if defined(LINUX) && defined(HAVE_STRUCT___OLD_KERNEL_STAT)
+#if defined(LINUX) && defined(HAVE_STRUCT___OLD_KERNEL_STAT) \
+    && !defined(HAVE_LONG_LONG_OFF_T)
 int
 sys_oldstat(struct tcb *tcp)
 {
@@ -1402,7 +1404,8 @@ sys_fstat64(struct tcb *tcp)
 #endif
 }
 
-#if defined(LINUX) && defined(HAVE_STRUCT___OLD_KERNEL_STAT)
+#if defined(LINUX) && defined(HAVE_STRUCT___OLD_KERNEL_STAT) \
+    && !defined(HAVE_LONG_LONG_OFF_T)
 int
 sys_oldfstat(struct tcb *tcp)
 {
@@ -1446,7 +1449,8 @@ sys_lstat64(struct tcb *tcp)
 #endif
 }
 
-#if defined(LINUX) && defined(HAVE_STRUCT___OLD_KERNEL_STAT)
+#if defined(LINUX) && defined(HAVE_STRUCT___OLD_KERNEL_STAT) \
+    && !defined(HAVE_LONG_LONG_OFF_T)
 int
 sys_oldlstat(struct tcb *tcp)
 {
