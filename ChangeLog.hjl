@@ -1,5 +1,10 @@
 2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
 
+	* io.c (sys_sendfile): Check HAVE_LONG_LONG_OFF_T when printing
+	offset.
+
+2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
+
 	* file.c (convertoldstat): Define only if HAVE_LONG_LONG_OFF_T
 	isn't defined.
 	(sys_oldstat): Likewise.
