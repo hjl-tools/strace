@@ -360,7 +360,10 @@ sys_mmap64(struct tcb *tcp)
 #endif /* linux */
 
 		/* addr */
-		tprintf("%#lx, ", u_arg[0]);
+		if (!u_arg[0])
+			tprintf("NULL, ");
+		else
+			tprintf("%#lx, ", u_arg[0]);
 		/* len */
 		tprintf("%lu, ", u_arg[1]);
 		/* prot */
