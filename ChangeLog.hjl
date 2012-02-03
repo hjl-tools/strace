@@ -1,3 +1,10 @@
+2012-02-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* syscall.c (dumpio): Also check the sys_func field.
+	(internal_syscall): Likewise.
+	(trace_syscall_exiting): Likewise.
+	(trace_syscall_entering): Likewise.
+
 2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* resource.c (RLIM64_INFINITY): Define only if it isn't defined.
