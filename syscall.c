@@ -475,7 +475,8 @@ dumpio(struct tcb *tcp)
 		return;
 	if (tcp->u_arg[0] < 0 || tcp->u_arg[0] >= MAX_QUALS)
 		return;
-	if (tcp->scno < 0 || tcp->scno >= nsyscalls)
+	if (tcp->scno < 0 || tcp->scno >= nsyscalls ||
+	    !sysent[tcp->scno].sys_func)
 		return;
 	if (sysent[tcp->scno].sys_func == printargs)
 		return;
@@ -630,7 +631,8 @@ internal_syscall(struct tcb *tcp)
 	 */
 	int	(*func)();
 
-	if (tcp->scno < 0 || tcp->scno >= nsyscalls)
+	if (tcp->scno < 0 || tcp->scno >= nsyscalls
+	    || !sysent[tcp->scno].sys_func)
 		return 0;
 
 	func = sysent[tcp->scno].sys_func;
@@ -2437,7 +2439,8 @@ trace_syscall_exiting(struct tcb *tcp)
 		tprintf("<... ");
 		if (scno_good != 1)
 			tprintf("????");
-		else if (tcp->scno >= nsyscalls || tcp->scno < 0)
+		else if (tcp->scno >= nsyscalls || tcp->scno < 0 ||
+			 !sysent[tcp->scno].sys_func)
 			tprintf("syscall_%lu", tcp->scno);
 		else
 			tprintf("%s", sysent[tcp->scno].sys_name);
@@ -2464,6 +2467,7 @@ trace_syscall_exiting(struct tcb *tcp)
 	}
 
 	if (tcp->scno >= nsyscalls || tcp->scno < 0
+	    || !sysent[tcp->scno].sys_func
 	    || (qual_flags[tcp->scno] & QUAL_RAW))
 		sys_res = printargs(tcp);
 	else {
@@ -2476,6 +2480,7 @@ trace_syscall_exiting(struct tcb *tcp)
 	tprintf(") ");
 	tabto(acolumn);
 	if (tcp->scno >= nsyscalls || tcp->scno < 0 ||
+	    !sysent[tcp->scno].sys_func ||
 	    qual_flags[tcp->scno] & QUAL_RAW) {
 		if (u_error)
 			tprintf("= -1 (errno %ld)", u_error);
@@ -2591,7 +2596,8 @@ trace_syscall_entering(struct tcb *tcp)
 		tcp_last = tcp;
 		if (scno_good != 1)
 			tprintf("????" /* anti-trigraph gap */ "(");
-		else if (tcp->scno >= nsyscalls || tcp->scno < 0)
+		else if (tcp->scno >= nsyscalls || tcp->scno < 0 ||
+			 !sysent[tcp->scno].sys_func)
 			tprintf("syscall_%lu(", tcp->scno);
 		else
 			tprintf("%s(", sysent[tcp->scno].sys_name);
@@ -2706,11 +2712,13 @@ trace_syscall_entering(struct tcb *tcp)
 	printleader(tcp);
 	tcp->flags &= ~TCB_REPRINT;
 	tcp_last = tcp;
-	if (tcp->scno >= nsyscalls || tcp->scno < 0)
+	if (tcp->scno >= nsyscalls || tcp->scno < 0 ||
+	    !sysent[tcp->scno].sys_func)
 		tprintf("syscall_%lu(", tcp->scno);
 	else
 		tprintf("%s(", sysent[tcp->scno].sys_name);
 	if (tcp->scno >= nsyscalls || tcp->scno < 0 ||
+	    !sysent[tcp->scno].sys_func ||
 	    ((qual_flags[tcp->scno] & QUAL_RAW) &&
 	     sysent[tcp->scno].sys_func != sys_exit))
 		sys_res = printargs(tcp);
