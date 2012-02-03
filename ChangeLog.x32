@@ -1,3 +1,7 @@
+2012-02-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* syscall.c (get_scno): Skip 64-bit and 32-bit modes in X32.
+
 2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* configure.ac: Support X32.

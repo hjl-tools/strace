@@ -909,9 +909,6 @@ get_scno(struct tcb *tcp)
 		return -1;
 	scno = x86_64_regs.orig_rax;
 
-#  ifdef X32
-	scno &= ~__X32_SYSCALL_MASK;
-#  else
 	if (!(tcp->flags & TCB_INSYSCALL)) {
 		static int currpers = -1;
 		int pid = tcp->pid;
@@ -972,14 +969,23 @@ get_scno(struct tcb *tcp)
 				break;
 		}
 #  endif
+#  ifdef X32
+		if (currpers == 0 || currpers == 1) {
+			fprintf(stderr, "syscall_%lu (...) in unsupported %s "
+				"mode of process PID=%d\n", scno,
+				currpers == 0 ? "64-bit" : "32-bit",
+				tcp->pid);
+			return 0;
+		}
+#  else
 		if (currpers != current_personality) {
 			static const char *const names[] = {"64 bit", "32 bit", "x32"};
 			set_personality(currpers);
 			fprintf(stderr, "[ Process PID=%d runs in %s mode. ]\n",
 					pid, names[current_personality]);
 		}
-	}
 #  endif
+	}
 # elif defined(IA64)
 #	define IA64_PSR_IS	((long)1 << 34)
 	if (upeek (tcp, PT_CR_IPSR, &psr) >= 0)
