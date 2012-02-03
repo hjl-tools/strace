@@ -1,3 +1,7 @@
+2012-02-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* defs.h (SCNO_IN_RANGE): Also check the sys_func field.
+
 2012-02-02  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* resource.c (RLIM64_INFINITY): Define only if it isn't defined.
