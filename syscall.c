@@ -928,16 +928,11 @@ get_scno(struct tcb *tcp)
 #   define __X32_SYSCALL_MASK	__X32_SYSCALL_BIT
 #  endif
 
-#  ifdef X86_64
 	int currpers;
-#  endif
 	if (ptrace(PTRACE_GETREGS, tcp->pid, NULL, (long) &x86_64_regs) < 0)
 		return -1;
 	scno = x86_64_regs.orig_rax;
 
-#  ifdef X32
-	scno &= ~__X32_SYSCALL_MASK;
-#  else
 	/* Check CS register value. On x86-64 linux it is:
 	 *	0x33	for long mode (64 bit)
 	 *	0x23	for compatibility mode (32 bit)
@@ -991,6 +986,14 @@ get_scno(struct tcb *tcp)
 			break;
 	}
 #  endif
+#  ifdef X32
+	if (currpers == 0 || currpers == 1) {
+		fprintf(stderr, "syscall_%lu (...) in unsupported %s "
+			"mode of process PID=%d\n", scno,
+			currpers == 0 ? "64-bit" : "32-bit", tcp->pid);
+		return 0;
+	}
+#  else
 	update_personality(tcp, currpers);
 #  endif
 # elif defined(IA64)
