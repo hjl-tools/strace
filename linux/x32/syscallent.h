@@ -12,7 +12,7 @@
 	{ 2,	0,	sys_munmap,		"munmap"	},  /* 11 */
 	{ 1,	0,	sys_brk,		"brk"		},  /* 12 */
 	{ },							    /* 13 */
-	{ },							    /* 14 */
+	{ 4,	TS,	sys_rt_sigprocmask,	"rt_sigprocmask"},  /* 14 */
 	{ },							    /* 15 */
 	{ },							    /* 16 */
 	{ 5,	TD,	sys_pread,		"pread"		},  /* 17 */
@@ -305,29 +305,28 @@
 	[302 ... 511] = {},
 
 	{ 4,	TS,	sys_rt_sigaction,	"rt_sigaction"	},  /* 512 */
-	{ 4,	TS,	sys_rt_sigprocmask,	"rt_sigprocmask"},  /* 513 */
-	{ 0,	TS,	printargs,		"rt_sigreturn"	},  /* 514 */
-	{ 3,	TD,	sys_ioctl,		"ioctl"		},  /* 515 */
-	{ 3,	TD,	sys_readv,		"readv"		},  /* 516 */
-	{ 3,	TD,	sys_writev,		"writev"	},  /* 517 */
-	{ 6,	TN,	sys_recvfrom,		"recvfrom"	},  /* 518 */
-	{ 3,	TN,	sys_sendmsg,		"sendmsg"	},  /* 519 */
-	{ 5,	TN,	sys_recvmsg,		"recvmsg"	},  /* 520 */
-	{ 3,	TF|TP,	sys_execve,		"execve"	},  /* 521 */
-	{ 1,	0,	sys_times,		"times"		},  /* 522 */
-	{ 2,	TS,	sys_rt_sigpending,	"rt_sigpending"	},  /* 523 */
-	{ 4,	TS,	sys_rt_sigtimedwait,	"rt_sigtimedwait" },  /* 524 */
-	{ 3,	TS,	sys_rt_sigqueueinfo,    "rt_sigqueueinfo" },  /* 525 */
-	{ 2,	TS,	sys_sigaltstack,	"sigaltstack"	},  /* 526 */
-	{ 3,	0,	sys_timer_create,	"timer_create"	}, /* 527 */
-	{ 5,	TP,	sys_waitid,		"waitid"	}, /* 528 */
-	{ 2,	0,	sys_mq_notify,		"mq_notify"	}, /* 529 */
-	{ 4,	0,	printargs,		"kexec_load"	}, /* 530 */
-	{ 2,	0,	printargs,		"set_robust_list" }, /* 531 */
-	{ 3,	0,	printargs,		"get_robust_list" }, /* 532 */
-	{ 4,	TD,	printargs,		"vmsplice"	}, /* 533 */
-	{ 6,	0,	sys_move_pages,		"move_pages"	}, /* 534 */
-	{ 5,	TD,	printargs,		"preadv"	}, /* 535 */
-	{ 5,	TD,	printargs,		"pwritev"	}, /* 536 */
-	{ 4,	TP|TS,	printargs,		"rt_tgsigqueueinfo"}, /* 537 */
-	{ 5,	TN,	sys_recvmmsg,		"recvmmsg"	}, /* 538 */
+	{ 0,	TS,	printargs,		"rt_sigreturn"	},  /* 513 */
+	{ 3,	TD,	sys_ioctl,		"ioctl"		},  /* 514 */
+	{ 3,	TD,	sys_readv,		"readv"		},  /* 515 */
+	{ 3,	TD,	sys_writev,		"writev"	},  /* 516 */
+	{ 6,	TN,	sys_recvfrom,		"recvfrom"	},  /* 517 */
+	{ 3,	TN,	sys_sendmsg,		"sendmsg"	},  /* 518 */
+	{ 5,	TN,	sys_recvmsg,		"recvmsg"	},  /* 519 */
+	{ 3,	TF|TP,	sys_execve,		"execve"	},  /* 520 */
+	{ 1,	0,	sys_times,		"times"		},  /* 521 */
+	{ 2,	TS,	sys_rt_sigpending,	"rt_sigpending"	},  /* 522 */
+	{ 4,	TS,	sys_rt_sigtimedwait,	"rt_sigtimedwait" },  /* 523 */
+	{ 3,	TS,	sys_rt_sigqueueinfo,    "rt_sigqueueinfo" },  /* 524 */
+	{ 2,	TS,	sys_sigaltstack,	"sigaltstack"	},  /* 525 */
+	{ 3,	0,	sys_timer_create,	"timer_create"	}, /* 526 */
+	{ 5,	TP,	sys_waitid,		"waitid"	}, /* 527 */
+	{ 2,	0,	sys_mq_notify,		"mq_notify"	}, /* 528 */
+	{ 4,	0,	printargs,		"kexec_load"	}, /* 529 */
+	{ 2,	0,	printargs,		"set_robust_list" }, /* 530 */
+	{ 3,	0,	printargs,		"get_robust_list" }, /* 531 */
+	{ 4,	TD,	printargs,		"vmsplice"	}, /* 532 */
+	{ 6,	0,	sys_move_pages,		"move_pages"	}, /* 533 */
+	{ 5,	TD,	printargs,		"preadv"	}, /* 534 */
+	{ 5,	TD,	printargs,		"pwritev"	}, /* 535 */
+	{ 4,	TP|TS,	printargs,		"rt_tgsigqueueinfo"}, /* 536 */
+	{ 5,	TN,	sys_recvmmsg,		"recvmmsg"	}, /* 537 */
