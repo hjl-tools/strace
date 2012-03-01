@@ -1,3 +1,7 @@
+2012-03-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* linux/x32/syscallent.h: Use 64bit sys_rt_sigprocmask for x32.
+
 2012-02-03  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* syscall.c (get_scno): Skip 64-bit and 32-bit modes in X32.
