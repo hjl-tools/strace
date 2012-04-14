@@ -766,8 +766,8 @@ printsiginfo(siginfo_t *sip, int verbose)
 					tprintf(", ...");
 				else
 					tprintf(", si_utime=%lu, si_stime=%lu",
-						sip->si_utime,
-						sip->si_stime);
+						(unsigned long) sip->si_utime,
+						(unsigned long) sip->si_stime);
 #endif
 				break;
 			case SIGILL: case SIGFPE:
