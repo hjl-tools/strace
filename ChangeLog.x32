@@ -1,5 +1,9 @@
 2012-04-14  H.J. Lu  <hongjiu.lu@intel.com>
 
+	* linux/x32/syscallent.h: Remove extra space.
+
+2012-04-14  H.J. Lu  <hongjiu.lu@intel.com>
+
 	* linux/x32/syscallent.h: Use 64-bit sys_times and x32 sys_ptrace
 	for x32.
 
