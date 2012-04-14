@@ -98,8 +98,8 @@
 	{ 2,	0,	sys_getrlimit,		"getrlimit"	},  /* 97 */
 	{ 2,	0,	sys_getrusage,		"getrusage"	},  /* 98 */
 	{ 1,	0,	sys_sysinfo,		"sysinfo"	},  /* 99 */
-	{ },							    /* 100 */
-	{ 4,	0,	sys_ptrace,		"ptrace"	},  /* 101 */
+	{ 1,	0,	sys_times,		"times"		},  /* 100 */
+	{ },							    /* 101 */
 	{ 0,	NF,	sys_getuid,		"getuid"	},  /* 102 */
 	{ 3,	0,	sys_syslog,		"syslog"	},  /* 103 */
 	{ 0,	NF,	sys_getgid,		"getgid"	},  /* 104 */
@@ -313,7 +313,7 @@
 	{ 3,	TN,	sys_sendmsg,		"sendmsg"	},  /* 518 */
 	{ 5,	TN,	sys_recvmsg,		"recvmsg"	},  /* 519 */
 	{ 3,	TF|TP,	sys_execve,		"execve"	},  /* 520 */
-	{ 1,	0,	sys_times,		"times"		},  /* 521 */
+	{ 4,	0,	sys_ptrace,		"ptrace"	},  /* 521 */
 	{ 2,	TS,	sys_rt_sigpending,	"rt_sigpending"	},  /* 522 */
 	{ 4,	TS,	sys_rt_sigtimedwait,	"rt_sigtimedwait" },  /* 523 */
 	{ 3,	TS,	sys_rt_sigqueueinfo,    "rt_sigqueueinfo" },  /* 524 */
