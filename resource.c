@@ -468,9 +468,11 @@ sys_times(struct tcb *tcp)
 			tprintf("{...}");
 		else {
 			tprintf("{tms_utime=%lu, tms_stime=%lu, ",
-				tbuf.tms_utime, tbuf.tms_stime);
+				(unsigned long) tbuf.tms_utime,
+				(unsigned long) tbuf.tms_stime);
 			tprintf("tms_cutime=%lu, tms_cstime=%lu}",
-				tbuf.tms_cutime, tbuf.tms_cstime);
+				(unsigned long) tbuf.tms_cutime,
+				(unsigned long) tbuf.tms_cstime);
 		}
 	}
 	return 0;
