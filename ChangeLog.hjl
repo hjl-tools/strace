@@ -1,3 +1,11 @@
+2012-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* resource.c (sys_times): Cast to unsigned long
+
+2012-04-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* signal.c (printsiginfo): Cast to unsigned long.
+
 2012-02-03  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* syscall.c (dumpio): Also check the sys_func field.
