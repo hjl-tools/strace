@@ -1,5 +1,10 @@
 2012-04-15  H.J. Lu  <hongjiu.lu@intel.com>
 
+	* util.c (printllval): Check X32 instead of LINUX_X32.
+	(change_syscall): Add x32 support.
+
+2012-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
 	* defs.h (tcb): Restore u_lrval.
 	(RVAL_LDECIMAL): Restored.
 	(RVAL_LHEX): Likewise.

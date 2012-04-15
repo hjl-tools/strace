@@ -212,7 +212,7 @@ printllval(struct tcb *tcp, const char *format, int llarg)
 # elif defined IA64 || defined ALPHA
 	tprintf(format, tcp->u_arg[llarg]);
 	llarg++;
-# elif defined LINUX_MIPSN32 || defined LINUX_X32
+# elif defined LINUX_MIPSN32 || defined X32
 	tprintf(format, tcp->ext_arg[llarg]);
 	llarg++;
 # else
@@ -1151,7 +1151,7 @@ change_syscall(struct tcb *tcp, int new)
 	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(ORIG_EAX * 4), new) < 0)
 		return -1;
 	return 0;
-#elif defined(X86_64)
+#elif defined(X86_64) || defined(X32)
 	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(ORIG_RAX * 8), new) < 0)
 		return -1;
 	return 0;
