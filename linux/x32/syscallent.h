@@ -198,7 +198,7 @@
 	{ 2,	TF,	sys_removexattr,	"removexattr"	}, /* 197 */
 	{ 2,	TF,	sys_removexattr,	"lremovexattr"	}, /* 198 */
 	{ 2,	TD,	sys_fremovexattr,	"fremovexattr"	}, /* 199 */
-	{ 2,	0,	sys_kill,		"tkill"		}, /* 200 */
+	{ 2,	TS,	sys_kill,		"tkill"		}, /* 200 */
 	{ 1,	0,	sys_time,		"time"		},  /* 201 */
 	{ 6,	0,	sys_futex,		"futex"		}, /* 202 */
 	{ 3,	0,	sys_sched_setaffinity,	"sched_setaffinity" },/* 203 */
@@ -328,9 +328,9 @@
 	{ 3,	TS,	sys_rt_sigqueueinfo,    "rt_sigqueueinfo" },  /* 524 */
 	{ 2,	TS,	sys_sigaltstack,	"sigaltstack"	},  /* 525 */
 	{ 3,	0,	sys_timer_create,	"timer_create"	}, /* 526 */
-	{ 5,	TP,	sys_waitid,		"waitid"	}, /* 527 */
-	{ 2,	0,	sys_mq_notify,		"mq_notify"	}, /* 528 */
-	{ 4,	0,	sys_kexec_load,		"kexec_load"	}, /* 529 */
+	{ 2,	0,	sys_mq_notify,		"mq_notify"	}, /* 527 */
+	{ 4,	0,	sys_kexec_load,		"kexec_load"	}, /* 528 */
+	{ 5,	TP,	sys_waitid,		"waitid"	}, /* 529 */
 	{ 2,	0,	sys_set_robust_list,	"set_robust_list" }, /* 530 */
 	{ 3,	0,	sys_get_robust_list,	"get_robust_list" }, /* 531 */
 	{ 4,	TD,	sys_vmsplice,		"vmsplice"	}, /* 532 */
@@ -341,4 +341,4 @@
 	{ 5,	TN,	sys_recvmmsg,		"recvmmsg"	}, /* 537 */
 	{ 4,	TN,	sys_sendmmsg,		"sendmmsg"	}, /* 538 */
 	{ 6,	0,	sys_process_vm_readv,	"process_vm_readv"}, /* 539 */
-	{ 6,	0,	printargs,		"process_vm_writev"}, /* 540 */
+	{ 6,	0,	sys_process_vm_writev,	"process_vm_writev"}, /* 540 */
