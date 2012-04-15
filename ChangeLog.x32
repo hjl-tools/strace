@@ -1,5 +1,19 @@
 2012-04-15  H.J. Lu  <hongjiu.lu@intel.com>
 
+	* defs.h (tcb): Restore u_lrval.
+	(RVAL_LDECIMAL): Restored.
+	(RVAL_LHEX): Likewise.
+	(RVAL_LOCTAL): Likewise.
+	(RVAL_LUDECIMAL): Likewise.
+	(RVAL_MASK): Set to 7.
+
+	* file.c (sys_lseek): Print 64bit offset and return RVAL_LUDECIMAL
+	for n32 and x32.
+
+	* syscall.c (get_error): Set u_lrval for x32 and n32.
+
+2012-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
 	* linux/x32/syscallent.h: Correct syscall entries.
 
 2012-04-14  H.J. Lu  <hongjiu.lu@intel.com>
