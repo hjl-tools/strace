@@ -1,5 +1,9 @@
 2012-04-14  H.J. Lu  <hongjiu.lu@intel.com>
 
+	* configure.ac: Use __ILP32__ to check x32.
+
+2012-04-14  H.J. Lu  <hongjiu.lu@intel.com>
+
 	* linux/x32/syscallent.h: Remove extra space.
 
 2012-04-14  H.J. Lu  <hongjiu.lu@intel.com>

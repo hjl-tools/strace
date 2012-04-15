@@ -80,12 +80,12 @@ sh*)
 	AC_DEFINE([SH], 1, [Define for the SH architecture.])
 	;;
 x86?64*)
-	if echo __LP64__ | ${CC-cc} $CFLAGS $CPPFLAGS -E - | grep __LP64__ > /dev/null; then
-		arch=x32
-		AC_DEFINE([X32], 1, [Define for the 32bit AMD x86-64 architecture.])
-	else
+	if echo __ILP32__ | ${CC-cc} $CFLAGS $CPPFLAGS -E - | grep __ILP32__ > /dev/null; then
 		arch=x86_64
 		AC_DEFINE([X86_64], 1, [Define for the 64bit AMD x86-64 architecture.])
+	else
+		arch=x32
+		AC_DEFINE([X32], 1, [Define for the 32bit AMD x86-64 architecture.])
 	fi
 	;;
 cris|crisv10)
