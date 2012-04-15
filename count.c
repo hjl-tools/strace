@@ -31,8 +31,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
@@ -64,7 +62,6 @@ count_syscall(struct tcb *tcp, struct timeval *tv)
 		counts[tcp->scno].errors++;
 
 	tv_sub(tv, tv, &tcp->etime);
-#ifdef LINUX
 	if (tv_cmp(tv, &tcp->dtime) > 0) {
 		static struct timeval one_tick;
 
@@ -88,7 +85,6 @@ count_syscall(struct tcb *tcp, struct timeval *tv)
 				*tv = one_tick;
 		}
 	}
-#endif /* LINUX */
 	if (tv_cmp(tv, &shortest) < 0)
 		shortest = *tv;
 	tv_add(&counts[tcp->scno].time, &counts[tcp->scno].time, tv);
@@ -132,8 +128,7 @@ set_sortby(const char *sortby)
 	else if (strcmp(sortby, "nothing") == 0)
 		sortfun = NULL;
 	else {
-		fprintf(stderr, "invalid sortby: `%s'\n", sortby);
-		exit(1);
+		error_msg_and_die("invalid sortby: '%s'", sortby);
 	}
 }
 
@@ -225,7 +220,7 @@ call_summary(FILE *outf)
 		if (i)
 			fprintf(outf,
 				"System call usage summary for %u bit mode:\n",
-				personality_wordsize[current_personality] * 8);
+				current_wordsize * 8);
 		call_summary_pers(outf);
 	}
 

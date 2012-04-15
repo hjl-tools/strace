@@ -26,20 +26,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
-#ifdef LINUX
 #include <asm/ioctl.h>
-#endif
 
 static int
 compare(const void *a, const void *b)
 {
-	unsigned long code1 = ((struct ioctlent *) a)->code;
+	unsigned long code1 = (long) a;
 	unsigned long code2 = ((struct ioctlent *) b)->code;
 	return (code1 > code2) ? 1 : (code1 < code2) ? -1 : 0;
 }
@@ -47,19 +42,18 @@ compare(const void *a, const void *b)
 const struct ioctlent *
 ioctl_lookup(long code)
 {
-	struct ioctlent *iop, ioent;
+	struct ioctlent *iop;
 
-	ioent.code = code;
-#ifdef LINUX
-	ioent.code &= (_IOC_NRMASK<<_IOC_NRSHIFT) | (_IOC_TYPEMASK<<_IOC_TYPESHIFT);
-#endif
-	iop = (struct ioctlent *) bsearch((char *) &ioent, (char *) ioctlent,
-			nioctlents, sizeof(struct ioctlent), compare);
-	while (iop > ioctlent)
-		if ((--iop)->code != ioent.code) {
+	code &= (_IOC_NRMASK<<_IOC_NRSHIFT) | (_IOC_TYPEMASK<<_IOC_TYPESHIFT);
+	iop = bsearch((void*)code, ioctlent,
+			nioctlents, sizeof(ioctlent[0]), compare);
+	while (iop > ioctlent) {
+		iop--;
+		if (iop->code != code) {
 			iop++;
 			break;
 		}
+	}
 	return iop;
 }
 
@@ -68,7 +62,8 @@ ioctl_next_match(const struct ioctlent *iop)
 {
 	long code;
 
-	code = (iop++)->code;
+	code = iop->code;
+	iop++;
 	if (iop < ioctlent + nioctlents && iop->code == code)
 		return iop;
 	return NULL;
@@ -78,40 +73,14 @@ int
 ioctl_decode(struct tcb *tcp, long code, long arg)
 {
 	switch ((code >> 8) & 0xff) {
-#ifdef LINUX
 #if defined(ALPHA) || defined(POWERPC)
 	case 'f': case 't': case 'T':
 #else /* !ALPHA */
 	case 0x54:
 #endif /* !ALPHA */
-#else /* !LINUX */
-	case 'f': case 't': case 'T':
-#endif /* !LINUX */
 		return term_ioctl(tcp, code, arg);
-#ifdef LINUX
 	case 0x89:
-#else /* !LINUX */
-	case 'r': case 's': case 'i':
-#ifndef FREEBSD
-	case 'p':
-#endif
-#endif /* !LINUX */
 		return sock_ioctl(tcp, code, arg);
-#ifdef USE_PROCFS
-#ifndef HAVE_MP_PROCFS
-#ifndef FREEBSD
-	case 'q':
-#else
-	case 'p':
-#endif
-		return proc_ioctl(tcp, code, arg);
-#endif
-#endif /* USE_PROCFS */
-#ifdef HAVE_SYS_STREAM_H
-	case 'S':
-		return stream_ioctl(tcp, code, arg);
-#endif /* HAVE_SYS_STREAM_H */
-#ifdef LINUX
 	case 'p':
 		return rtc_ioctl(tcp, code, arg);
 	case 0x03:
@@ -119,7 +88,8 @@ ioctl_decode(struct tcb *tcp, long code, long arg)
 		return block_ioctl(tcp, code, arg);
 	case 0x22:
 		return scsi_ioctl(tcp, code, arg);
-#endif
+	case 'M':
+		return mtd_ioctl(tcp, code, arg);
 	default:
 		break;
 	}

@@ -1,8 +1,5 @@
 /*
  * Copyright (c) 2001 Hewlett-Packard, Matthew Wilcox
- *
- * $Id$
- *
  */
 
 	{ 0,	0,	sys_restart_syscall,	"restart_syscall"	}, /* 0 */
@@ -107,7 +104,7 @@
 	{ 2,	TF,	sys_statfs,		"statfs"		}, /* 99 */
 	{ 2,	TD,	sys_fstatfs,		"fstatfs"		}, /* 100 */
 	{ 2,	TF,	sys_stat64,		"stat64"		}, /* 101 */
-	{ 5,	0,	printargs,		"SYS_102"		}, /* 102 */
+	{ 5,	0,	NULL,			NULL			}, /* 102 */
 	{ 3,	0,	sys_syslog,		"syslog"		}, /* 103 */
 	{ 3,	0,	sys_setitimer,		"setitimer"		}, /* 104 */
 	{ 2,	0,	sys_getitimer,		"getitimer"		}, /* 105 */
@@ -264,7 +261,7 @@
 	{ 2,	0,	sys_clock_gettime,	"clock_gettime"		}, /* 256 */
 	{ 2,	0,	sys_clock_getres,	"clock_getres"		}, /* 257 */
 	{ 5,	0,	printargs,		"clock_nanosleep"	}, /* 258 */
-	{ 5,	0,	printargs,		"tgkill"		}, /* 259 */
+	{ 3,	TS,	sys_tgkill,		"tgkill"		}, /* 259 */
 	{ 5,	0,	printargs,		"mbind"			}, /* 260 */
 	{ 5,	0,	printargs,		"get_mempolicy"		}, /* 261 */
 	{ 5,	0,	printargs,		"set_mempolicy"		}, /* 262 */

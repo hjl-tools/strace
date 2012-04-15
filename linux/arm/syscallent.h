@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 	{ 0,	0,	sys_restart_syscall,	"restart_syscall"}, /* 0 */
@@ -252,8 +250,8 @@
 	{ 3,	0,	sys_mincore,		"mincore"	}, /* 219 */
 	{ 3,	0,	sys_madvise,		"madvise"	}, /* 220 */
 	{ 3,	0,	sys_fcntl,		"fcntl64"	}, /* 221 */
-	{ 5,	0,	printargs,		"SYS_222"	}, /* 222 */
-	{ 5,	0,	printargs,		"SYS_223"	}, /* 223 */
+	{ 5,	0,	NULL,			NULL		}, /* 222 */
+	{ 5,	0,	NULL,			NULL		}, /* 223 */
 	{ 0,	0,	sys_gettid,		"gettid"	}, /* 224 */
 	{ 5,	0,	sys_readahead,		"readahead"	}, /* 225 */
 	{ 5,	TF,	sys_setxattr,		"setxattr"	}, /* 226 */
@@ -284,8 +282,8 @@
 	{ 4,	TD,	sys_epoll_ctl,		"epoll_ctl"	}, /* 251 */
 	{ 4,	TD,	sys_epoll_wait,		"epoll_wait"	}, /* 252 */
 	{ 5,	0,	sys_remap_file_pages,	"remap_file_pages"}, /* 253 */
-	{ 5,	0,	printargs,		"SYS_254"	}, /* 254 */
-	{ 5,	0,	printargs,		"SYS_255"	}, /* 255 */
+	{ 5,	0,	NULL,			NULL		}, /* 254 */
+	{ 5,	0,	NULL,			NULL		}, /* 255 */
 	{ 1,	0,	sys_set_tid_address,	"set_tid_address"}, /* 256 */
 	{ 3,	0,	sys_timer_create,	"timer_create"	}, /* 257 */
 	{ 4,	0,	sys_timer_settime,	"timer_settime"	}, /* 258 */
@@ -371,7 +369,7 @@
 	{ 2,	0,	sys_set_robust_list,	"set_robust_list" }, /* 338 */
 	{ 3,	0,	sys_get_robust_list,	"get_robust_list" }, /* 339 */
 	{ 6,	TD,	sys_splice,		"splice"	}, /* 340 */
-	{ 5,	0,	printargs,		"SYS_341"	}, /* 341 */
+	{ 5,	0,	NULL,			NULL		}, /* 341 */
 	{ 4,	TD,	sys_tee,		"tee"		}, /* 342 */
 	{ 4,	TD,	sys_vmsplice,		"vmsplice"	}, /* 343 */
 	{ 6,	0,	sys_move_pages,		"move_pages"	}, /* 344 */
@@ -406,30 +404,30 @@
 	{ 1,	TD,	sys_syncfs,		"syncfs"	}, /* 373 */
 	{ 4,	TN,	sys_sendmmsg,		"sendmmsg"	}, /* 374 */
 	{ 2,	TD,	sys_setns,		"setns"		}, /* 375 */
-	{ 5,	0,	printargs,		"SYS_376"	}, /* 376 */
-	{ 5,	0,	printargs,		"SYS_377"	}, /* 377 */
-	{ 5,	0,	printargs,		"SYS_378"	}, /* 378 */
-	{ 5,	0,	printargs,		"SYS_379"	}, /* 379 */
-	{ 5,	0,	printargs,		"SYS_380"	}, /* 380 */
-	{ 5,	0,	printargs,		"SYS_381"	}, /* 381 */
-	{ 5,	0,	printargs,		"SYS_382"	}, /* 382 */
-	{ 5,	0,	printargs,		"SYS_383"	}, /* 383 */
-	{ 5,	0,	printargs,		"SYS_384"	}, /* 384 */
-	{ 5,	0,	printargs,		"SYS_385"	}, /* 385 */
-	{ 5,	0,	printargs,		"SYS_386"	}, /* 386 */
-	{ 5,	0,	printargs,		"SYS_387"	}, /* 387 */
-	{ 5,	0,	printargs,		"SYS_388"	}, /* 388 */
-	{ 5,	0,	printargs,		"SYS_389"	}, /* 389 */
-	{ 5,	0,	printargs,		"SYS_390"	}, /* 390 */
-	{ 5,	0,	printargs,		"SYS_391"	}, /* 391 */
-	{ 5,	0,	printargs,		"SYS_392"	}, /* 392 */
-	{ 5,	0,	printargs,		"SYS_393"	}, /* 393 */
-	{ 5,	0,	printargs,		"SYS_394"	}, /* 394 */
-	{ 5,	0,	printargs,		"SYS_395"	}, /* 395 */
-	{ 5,	0,	printargs,		"SYS_396"	}, /* 396 */
-	{ 5,	0,	printargs,		"SYS_397"	}, /* 397 */
-	{ 5,	0,	printargs,		"SYS_398"	}, /* 398 */
-	{ 5,	0,	printargs,		"SYS_399"	}, /* 399 */
+	{ 6,	0,	sys_process_vm_readv,	"process_vm_readv"	}, /* 376 */
+	{ 6,	0,	sys_process_vm_writev,	"process_vm_writev"	}, /* 377 */
+	{ 5,	0,	NULL,			NULL		}, /* 378 */
+	{ 5,	0,	NULL,			NULL		}, /* 379 */
+	{ 5,	0,	NULL,			NULL		}, /* 380 */
+	{ 5,	0,	NULL,			NULL		}, /* 381 */
+	{ 5,	0,	NULL,			NULL		}, /* 382 */
+	{ 5,	0,	NULL,			NULL		}, /* 383 */
+	{ 5,	0,	NULL,			NULL		}, /* 384 */
+	{ 5,	0,	NULL,			NULL		}, /* 385 */
+	{ 5,	0,	NULL,			NULL		}, /* 386 */
+	{ 5,	0,	NULL,			NULL		}, /* 387 */
+	{ 5,	0,	NULL,			NULL		}, /* 388 */
+	{ 5,	0,	NULL,			NULL		}, /* 389 */
+	{ 5,	0,	NULL,			NULL		}, /* 390 */
+	{ 5,	0,	NULL,			NULL		}, /* 391 */
+	{ 5,	0,	NULL,			NULL		}, /* 392 */
+	{ 5,	0,	NULL,			NULL		}, /* 393 */
+	{ 5,	0,	NULL,			NULL		}, /* 394 */
+	{ 5,	0,	NULL,			NULL		}, /* 395 */
+	{ 5,	0,	NULL,			NULL		}, /* 396 */
+	{ 5,	0,	NULL,			NULL		}, /* 397 */
+	{ 5,	0,	NULL,			NULL		}, /* 398 */
+	{ 5,	0,	NULL,			NULL		}, /* 399 */
 
 #ifndef __ARM_EABI__
 #if SYS_socket_subcall != 400

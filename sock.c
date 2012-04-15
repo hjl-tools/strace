@@ -23,27 +23,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
-#ifdef LINUX
 #include <sys/socket.h>
 #include <linux/sockios.h>
-#else
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#endif
 #include <arpa/inet.h>
-
-#if defined (ALPHA) || defined(SH) || defined(SH64)
-#ifdef HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
-#elif defined(HAVE_IOCTLS_H)
-#include <ioctls.h>
-#endif
+#if defined(ALPHA) || defined(SH) || defined(SH64)
+# if defined(HAVE_SYS_IOCTL_H)
+#  include <sys/ioctl.h>
+# elif defined(HAVE_IOCTLS_H)
+#  include <ioctls.h>
+# endif
 #endif
 #include <net/if.h>
 
@@ -65,7 +56,6 @@ static const struct xlat iffflags[] = {
 	{ IFF_AUTOMEDIA,	"IFF_AUTOMEDIA"		},
 	{ 0,			NULL			}
 };
-
 
 static void
 print_addr(struct tcb *tcp, long addr, struct ifreq *ifr)
@@ -127,7 +117,6 @@ sock_ioctl(struct tcb *tcp, long code, long arg)
 #endif
 		printnum(tcp, arg, ", %#d");
 		return 1;
-#ifdef LINUX
 	case SIOCGIFNAME:
 	case SIOCSIFNAME:
 	case SIOCGIFINDEX:
@@ -286,8 +275,13 @@ sock_ioctl(struct tcb *tcp, long code, long arg)
 		}
 		tprints("}");
 		return 1;
-#endif
 	default:
 		return 0;
 	}
+}
+
+int
+sys_socketcall(struct tcb *tcp)
+{
+	return printargs(tcp);
 }

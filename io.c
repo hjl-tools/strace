@@ -26,24 +26,12 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
 #include <fcntl.h>
 #if HAVE_SYS_UIO_H
-#include <sys/uio.h>
-#endif
-
-#ifdef HAVE_LONG_LONG_OFF_T
-/*
- * Hacks for systems that have a long long off_t
- */
-
-#define sys_pread64	sys_pread
-#define sys_pwrite64	sys_pwrite
+# include <sys/uio.h>
 #endif
 
 int
@@ -78,20 +66,17 @@ sys_write(struct tcb *tcp)
 void
 tprint_iov(struct tcb *tcp, unsigned long len, unsigned long addr, int decode_iov)
 {
-#if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
+#if SUPPORTED_PERSONALITIES > 1
 	union {
 		struct { u_int32_t base; u_int32_t len; } iov32;
 		struct { u_int64_t base; u_int64_t len; } iov64;
 	} iov;
 #define sizeof_iov \
-  (personality_wordsize[current_personality] == 4 \
-   ? sizeof(iov.iov32) : sizeof(iov.iov64))
+	(current_wordsize == 4 ? sizeof(iov.iov32) : sizeof(iov.iov64))
 #define iov_iov_base \
-  (personality_wordsize[current_personality] == 4 \
-   ? (u_int64_t) iov.iov32.base : iov.iov64.base)
+	(current_wordsize == 4 ? (uint64_t) iov.iov32.base : iov.iov64.base)
 #define iov_iov_len \
-  (personality_wordsize[current_personality] == 4 \
-   ? (u_int64_t) iov.iov32.len : iov.iov64.len)
+	(current_wordsize == 4 ? (uint64_t) iov.iov32.len : iov.iov64.len)
 #else
 	struct iovec iov;
 #define sizeof_iov sizeof(iov)
@@ -177,95 +162,6 @@ sys_writev(struct tcb *tcp)
 }
 #endif
 
-#if defined(SVR4)
-
-int
-sys_pread(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		printfd(tcp, tcp->u_arg[0]);
-		tprints(", ");
-	} else {
-		if (syserror(tcp))
-			tprintf("%#lx", tcp->u_arg[1]);
-		else
-			printstr(tcp, tcp->u_arg[1], tcp->u_rval);
-#if UNIXWARE
-		/* off_t is signed int */
-		tprintf(", %lu, %ld", tcp->u_arg[2], tcp->u_arg[3]);
-#else
-		tprintf(", %lu, %llu", tcp->u_arg[2],
-			LONG_LONG(tcp->u_arg[3], tcp->u_arg[4]));
-#endif
-	}
-	return 0;
-}
-
-int
-sys_pwrite(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		printfd(tcp, tcp->u_arg[0]);
-		tprints(", ");
-		printstr(tcp, tcp->u_arg[1], tcp->u_arg[2]);
-#if UNIXWARE
-		/* off_t is signed int */
-		tprintf(", %lu, %ld", tcp->u_arg[2], tcp->u_arg[3]);
-#else
-		tprintf(", %lu, %llu", tcp->u_arg[2],
-			LONG_LONG(tcp->u_arg[3], tcp->u_arg[4]));
-#endif
-	}
-	return 0;
-}
-#endif /* SVR4 */
-
-#ifdef FREEBSD
-#include <sys/types.h>
-#include <sys/socket.h>
-
-int
-sys_sendfile(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		printfd(tcp, tcp->u_arg[0]);
-		tprints(", ");
-		printfd(tcp, tcp->u_arg[1]);
-		tprintf(", %llu, %lu",
-			LONG_LONG(tcp->u_arg[2], tcp->u_arg[3]),
-			tcp->u_arg[4]);
-	} else {
-		off_t offset;
-
-		if (!tcp->u_arg[5])
-			tprints(", NULL");
-		else {
-			struct sf_hdtr hdtr;
-
-			if (umove(tcp, tcp->u_arg[5], &hdtr) < 0)
-				tprintf(", %#lx", tcp->u_arg[5]);
-			else {
-				tprints(", { ");
-				tprint_iov(tcp, hdtr.hdr_cnt, hdtr.headers, 1);
-				tprintf(", %u, ", hdtr.hdr_cnt);
-				tprint_iov(tcp, hdtr.trl_cnt, hdtr.trailers, 1);
-				tprintf(", %u }", hdtr.hdr_cnt);
-			}
-		}
-		if (!tcp->u_arg[6])
-			tprints(", NULL");
-		else if (umove(tcp, tcp->u_arg[6], &offset) < 0)
-			tprintf(", %#lx", tcp->u_arg[6]);
-		else
-			tprintf(", [%llu]", offset);
-		tprintf(", %lu", tcp->u_arg[7]);
-	}
-	return 0;
-}
-#endif /* FREEBSD */
-
-#ifdef LINUX
-
 /* The SH4 ABI does allow long longs in odd-numbered registers, but
    does not allow them to be split between registers and memory - and
    there are only four argument registers for normal functions.  As a
@@ -277,7 +173,6 @@ sys_sendfile(struct tcb *tcp)
 #define PREAD_OFFSET_ARG 3
 #endif
 
-#if !defined X32
 int
 sys_pread(struct tcb *tcp)
 {
@@ -307,7 +202,6 @@ sys_pwrite(struct tcb *tcp)
 	}
 	return 0;
 }
-#endif
 
 #if HAVE_SYS_UIO_H
 int
@@ -367,7 +261,7 @@ sys_sendfile(struct tcb *tcp)
 	return 0;
 }
 
-static void
+void
 print_loff_t(struct tcb *tcp, long addr)
 {
 	loff_t offset;
@@ -461,45 +355,12 @@ sys_vmsplice(struct tcb *tcp)
 		tprints(", ");
 		/* const struct iovec *iov, unsigned long nr_segs */
 		tprint_iov(tcp, tcp->u_arg[2], tcp->u_arg[1], 1);
-		tprints(", ");
+		tprintf(", %lu, ", tcp->u_arg[2]);
 		/* unsigned int flags */
 		printflags(splice_flags, tcp->u_arg[3], "SPLICE_F_???");
 	}
 	return 0;
 }
-#endif /* LINUX */
-
-#if _LFS64_LARGEFILE || HAVE_LONG_LONG_OFF_T
-int
-sys_pread64(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		printfd(tcp, tcp->u_arg[0]);
-		tprints(", ");
-	} else {
-		if (syserror(tcp))
-			tprintf("%#lx", tcp->u_arg[1]);
-		else
-			printstr(tcp, tcp->u_arg[1], tcp->u_rval);
-		tprintf(", %lu, ", tcp->u_arg[2]);
-		printllval(tcp, "%#llx", 3);
-	}
-	return 0;
-}
-
-int
-sys_pwrite64(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		printfd(tcp, tcp->u_arg[0]);
-		tprints(", ");
-		printstr(tcp, tcp->u_arg[1], tcp->u_arg[2]);
-		tprintf(", %lu, ", tcp->u_arg[2]);
-		printllval(tcp, "%#llx", 3);
-	}
-	return 0;
-}
-#endif
 
 int
 sys_ioctl(struct tcb *tcp)

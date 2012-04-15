@@ -26,22 +26,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
+
 #include "defs.h"
-
-#if defined(LINUX)
-
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
 #include <sys/utsname.h>
 #include <sys/user.h>
-#include <sys/syscall.h>
-#include <signal.h>
 
 /* Bits of module.flags.  */
 
@@ -208,4 +201,3 @@ sys_init_module(struct tcb *tcp)
 	}
 	return 0;
 }
-#endif /* LINUX */

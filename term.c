@@ -23,29 +23,16 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
-#ifdef LINUX
 /*
  * The C library's definition of struct termios might differ from
  * the kernel one, and we need to use the kernel layout.
  */
 #include <linux/termios.h>
-#else
-
-#ifdef HAVE_TERMIO_H
-#include <termio.h>
-#endif /* HAVE_TERMIO_H */
-
-#include <termios.h>
-#endif
-
 #ifdef HAVE_SYS_FILIO_H
-#include <sys/filio.h>
+# include <sys/filio.h>
 #endif
 
 static const struct xlat tcxonc_options[] = {
@@ -177,18 +164,10 @@ static const struct xlat modem_flags[] = {
 	{ 0,		NULL,		},
 };
 
-
 int term_ioctl(struct tcb *tcp, long code, long arg)
 {
 	struct termios tios;
-#ifndef FREEBSD
 	struct termio tio;
-#else
-	#define TCGETS	TIOCGETA
-	#define TCSETS	TIOCSETA
-	#define TCSETSW	TIOCSETAW
-	#define TCSETSF	TIOCSETAF
-#endif
 	struct winsize ws;
 #ifdef TIOCGSIZE
 	struct  ttysize ts;
@@ -213,16 +192,7 @@ int term_ioctl(struct tcb *tcp, long code, long arg)
 			return 0;
 		if (abbrev(tcp)) {
 			tprints(", {");
-#ifndef FREEBSD
 			printxval(baud_options, tios.c_cflag & CBAUD, "B???");
-#else
-			printxval(baud_options, tios.c_ispeed, "B???");
-			if (tios.c_ispeed != tios.c_ospeed) {
-				tprints(" (in)");
-				printxval(baud_options, tios.c_ospeed, "B???");
-				tprints(" (out)");
-			}
-#endif
 			tprintf(" %sopost %sisig %sicanon %secho ...}",
 				(tios.c_oflag & OPOST) ? "" : "-",
 				(tios.c_lflag & ISIG) ? "" : "-",
@@ -234,9 +204,7 @@ int term_ioctl(struct tcb *tcp, long code, long arg)
 			(long) tios.c_iflag, (long) tios.c_oflag);
 		tprintf("c_cflags=%#lx, c_lflags=%#lx, ",
 			(long) tios.c_cflag, (long) tios.c_lflag);
-#if !defined(SVR4) && !defined(FREEBSD)
 		tprintf("c_line=%u, ", tios.c_line);
-#endif
 		if (!(tios.c_lflag & ICANON))
 			tprintf("c_cc[VMIN]=%d, c_cc[VTIME]=%d, ",
 				tios.c_cc[VMIN], tios.c_cc[VTIME]);

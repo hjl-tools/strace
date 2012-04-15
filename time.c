@@ -25,13 +25,9 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
-#ifdef LINUX
 #include <linux/version.h>
 #include <sys/timex.h>
 #include <linux/ioctl.h>
@@ -43,7 +39,6 @@
 #ifndef UTIME_OMIT
 #define UTIME_OMIT ((1l << 30) - 2l)
 #endif
-#endif /* LINUX */
 
 struct timeval32
 {
@@ -83,8 +78,8 @@ sprinttv(char *buf, struct tcb *tcp, long addr, enum bitness_t bitness, int spec
 		return buf + sprintf(buf, "%#lx", addr);
 
 	if (bitness == BITNESS_32
-#if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
-	    || personality_wordsize[current_personality] == 4
+#if SUPPORTED_PERSONALITIES > 1
+	    || current_wordsize == 4
 #endif
 		)
 	{
@@ -139,8 +134,8 @@ sprint_timespec(char *buf, struct tcb *tcp, long addr)
 	else {
 		int rc;
 
-#if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
-		if (personality_wordsize[current_personality] == 4) {
+#if SUPPORTED_PERSONALITIES > 1
+		if (current_wordsize == 4) {
 			struct timeval32 tv;
 
 			rc = umove(tcp, addr, &tv);
@@ -167,9 +162,7 @@ int
 sys_time(struct tcb *tcp)
 {
 	if (exiting(tcp)) {
-#ifndef SVR4
 		printnum(tcp, tcp->u_arg[0], "%ld");
-#endif /* SVR4 */
 	}
 	return 0;
 }
@@ -193,14 +186,11 @@ sys_gettimeofday(struct tcb *tcp)
 			return 0;
 		}
 		printtv(tcp, tcp->u_arg[0]);
-#ifndef SVR4
 		tprints(", ");
 		printtv(tcp, tcp->u_arg[1]);
-#endif /* !SVR4 */
 	}
 	return 0;
 }
-
 
 #ifdef ALPHA
 int
@@ -212,10 +202,8 @@ sys_osf_gettimeofday(struct tcb *tcp)
 			return 0;
 		}
 		printtv_bitness(tcp, tcp->u_arg[0], BITNESS_32, 0);
-#ifndef SVR4
 		tprints(", ");
 		printtv_bitness(tcp, tcp->u_arg[1], BITNESS_32, 0);
-#endif /* !SVR4 */
 	}
 	return 0;
 }
@@ -226,10 +214,8 @@ sys_settimeofday(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		printtv(tcp, tcp->u_arg[0]);
-#ifndef SVR4
 		tprints(", ");
 		printtv(tcp, tcp->u_arg[1]);
-#endif /* !SVR4 */
 	}
 	return 0;
 }
@@ -240,10 +226,8 @@ sys_osf_settimeofday(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		printtv_bitness(tcp, tcp->u_arg[0], BITNESS_32, 0);
-#ifndef SVR4
 		tprints(", ");
 		printtv_bitness(tcp, tcp->u_arg[1], BITNESS_32, 0);
-#endif /* !SVR4 */
 	}
 	return 0;
 }
@@ -303,8 +287,8 @@ printitv_bitness(struct tcb *tcp, long addr, enum bitness_t bitness)
 		int rc;
 
 		if (bitness == BITNESS_32
-#if defined(LINUX) && SUPPORTED_PERSONALITIES > 1
-		    || personality_wordsize[current_personality] == 4
+#if SUPPORTED_PERSONALITIES > 1
+		    || current_wordsize == 4
 #endif
 			)
 		{
@@ -354,7 +338,6 @@ sys_getitimer(struct tcb *tcp)
 	}
 	return 0;
 }
-
 
 #ifdef ALPHA
 int
@@ -409,100 +392,98 @@ sys_osf_setitimer(struct tcb *tcp)
 }
 #endif
 
-#ifdef LINUX
-
 static const struct xlat adjtimex_modes[] = {
-  { 0, "0" },
+	{ 0,		"0"			},
 #ifdef ADJ_OFFSET
-  { ADJ_OFFSET, "ADJ_OFFSET" },
+	{ ADJ_OFFSET,	"ADJ_OFFSET"		},
 #endif
 #ifdef ADJ_FREQUENCY
-  { ADJ_FREQUENCY, "ADJ_FREQUENCY" },
+	{ ADJ_FREQUENCY, "ADJ_FREQUENCY"	},
 #endif
 #ifdef ADJ_MAXERROR
-  { ADJ_MAXERROR, "ADJ_MAXERROR" },
+	{ ADJ_MAXERROR,	"ADJ_MAXERROR"		},
 #endif
 #ifdef ADJ_ESTERROR
-  { ADJ_ESTERROR, "ADJ_ESTERROR" },
+	{ ADJ_ESTERROR,	"ADJ_ESTERROR"		},
 #endif
 #ifdef ADJ_STATUS
-  { ADJ_STATUS, "ADJ_STATUS" },
+	{ ADJ_STATUS,	"ADJ_STATUS"		},
 #endif
 #ifdef ADJ_TIMECONST
-  { ADJ_TIMECONST, "ADJ_TIMECONST" },
+	{ ADJ_TIMECONST, "ADJ_TIMECONST"	},
 #endif
 #ifdef ADJ_TICK
-  { ADJ_TICK, "ADJ_TICK" },
+	{ ADJ_TICK,	"ADJ_TICK"		},
 #endif
 #ifdef ADJ_OFFSET_SINGLESHOT
-  { ADJ_OFFSET_SINGLESHOT, "ADJ_OFFSET_SINGLESHOT" },
+	{ ADJ_OFFSET_SINGLESHOT, "ADJ_OFFSET_SINGLESHOT" },
 #endif
-  { 0,             NULL }
+	{ 0,		NULL			}
 };
 
 static const struct xlat adjtimex_status[] = {
 #ifdef STA_PLL
-  { STA_PLL, "STA_PLL" },
+	{ STA_PLL,	"STA_PLL"	},
 #endif
 #ifdef STA_PPSFREQ
-  { STA_PPSFREQ, "STA_PPSFREQ" },
+	{ STA_PPSFREQ,	"STA_PPSFREQ"	},
 #endif
 #ifdef STA_PPSTIME
-  { STA_PPSTIME, "STA_PPSTIME" },
+	{ STA_PPSTIME,	"STA_PPSTIME"	},
 #endif
 #ifdef STA_FLL
-  { STA_FLL, "STA_FLL" },
+	{ STA_FLL,	"STA_FLL"	},
 #endif
 #ifdef STA_INS
-  { STA_INS, "STA_INS" },
+	{ STA_INS,	"STA_INS"	},
 #endif
 #ifdef STA_DEL
-  { STA_DEL, "STA_DEL" },
+	{ STA_DEL,	"STA_DEL"	},
 #endif
 #ifdef STA_UNSYNC
-  { STA_UNSYNC, "STA_UNSYNC" },
+	{ STA_UNSYNC,	"STA_UNSYNC"	},
 #endif
 #ifdef STA_FREQHOLD
-  { STA_FREQHOLD, "STA_FREQHOLD" },
+	{ STA_FREQHOLD,	"STA_FREQHOLD"	},
 #endif
 #ifdef STA_PPSSIGNAL
-  { STA_PPSSIGNAL, "STA_PPSSIGNAL" },
+	{ STA_PPSSIGNAL, "STA_PPSSIGNAL" },
 #endif
 #ifdef STA_PPSJITTER
-  { STA_PPSJITTER, "STA_PPSJITTER" },
+	{ STA_PPSJITTER, "STA_PPSJITTER" },
 #endif
 #ifdef STA_PPSWANDER
-  { STA_PPSWANDER, "STA_PPSWANDER" },
+	{ STA_PPSWANDER, "STA_PPSWANDER" },
 #endif
 #ifdef STA_PPSERROR
-  { STA_PPSERROR, "STA_PPSERROR" },
+	{ STA_PPSERROR,	"STA_PPSERROR"	},
 #endif
 #ifdef STA_CLOCKERR
-  { STA_CLOCKERR, "STA_CLOCKERR" },
+	{ STA_CLOCKERR,	"STA_CLOCKERR"	},
 #endif
-  { 0,             NULL }
+	{ 0,		NULL		}
 };
 
 static const struct xlat adjtimex_state[] = {
 #ifdef TIME_OK
-  { TIME_OK, "TIME_OK" },
+	{ TIME_OK,	"TIME_OK"	},
 #endif
 #ifdef TIME_INS
-  { TIME_INS, "TIME_INS" },
+	{ TIME_INS,	"TIME_INS"	},
 #endif
 #ifdef TIME_DEL
-  { TIME_DEL, "TIME_DEL" },
+	{ TIME_DEL,	"TIME_DEL"	},
 #endif
 #ifdef TIME_OOP
-  { TIME_OOP, "TIME_OOP" },
+	{ TIME_OOP,	"TIME_OOP"	},
 #endif
 #ifdef TIME_WAIT
-  { TIME_WAIT, "TIME_WAIT" },
+	{ TIME_WAIT,	"TIME_WAIT"	},
 #endif
 #ifdef TIME_ERROR
-  { TIME_ERROR, "TIME_ERROR" },
+	{ TIME_ERROR,	"TIME_ERROR"	},
 #endif
-  { 0,             NULL }
+	{ 0,		NULL		}
 };
 
 #if SUPPORTED_PERSONALITIES > 1
@@ -561,7 +542,7 @@ tprint_timex(struct tcb *tcp, long addr)
 	struct timex tx;
 
 #if SUPPORTED_PERSONALITIES > 1
-	if (personality_wordsize[current_personality] == 4)
+	if (current_wordsize == 4)
 		return tprint_timex32(tcp, addr);
 #endif
 	if (umove(tcp, addr, &tx) < 0)
@@ -598,53 +579,59 @@ tprint_timex(struct tcb *tcp, long addr)
 	return 0;
 }
 
+static int
+do_adjtimex(struct tcb *tcp, long addr)
+{
+	if (addr == 0)
+		tprints("NULL");
+	else if (syserror(tcp) || !verbose(tcp))
+		tprintf("%#lx", addr);
+	else if (tprint_timex(tcp, addr) < 0)
+		tprints("{...}");
+	if (syserror(tcp))
+		return 0;
+	tcp->auxstr = xlookup(adjtimex_state, tcp->u_rval);
+	if (tcp->auxstr)
+		return RVAL_STR;
+	return 0;
+}
+
 int
 sys_adjtimex(struct tcb *tcp)
 {
-	if (exiting(tcp)) {
-		if (tcp->u_arg[0] == 0)
-			tprints("NULL");
-		else if (syserror(tcp) || !verbose(tcp))
-			tprintf("%#lx", tcp->u_arg[0]);
-		else if (tprint_timex(tcp, tcp->u_arg[0]) < 0)
-			tprints("{...}");
-		if (syserror(tcp))
-			return 0;
-		tcp->auxstr = xlookup(adjtimex_state, tcp->u_rval);
-		if (tcp->auxstr)
-			return RVAL_STR;
-	}
+	if (exiting(tcp))
+		return do_adjtimex(tcp, tcp->u_arg[0]);
 	return 0;
 }
 
 static const struct xlat clockflags[] = {
-  { TIMER_ABSTIME, "TIMER_ABSTIME" },
-  { 0,             NULL }
+	{ TIMER_ABSTIME,	"TIMER_ABSTIME"	},
+	{ 0,			NULL		}
 };
 
 static const struct xlat clocknames[] = {
 #ifdef CLOCK_REALTIME
-  { CLOCK_REALTIME, "CLOCK_REALTIME" },
+	{ CLOCK_REALTIME,		"CLOCK_REALTIME" },
 #endif
 #ifdef CLOCK_MONOTONIC
-  { CLOCK_MONOTONIC, "CLOCK_MONOTONIC" },
+	{ CLOCK_MONOTONIC,		"CLOCK_MONOTONIC" },
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
-  { CLOCK_PROCESS_CPUTIME_ID, "CLOCK_PROCESS_CPUTIME_ID" },
+	{ CLOCK_PROCESS_CPUTIME_ID,	"CLOCK_PROCESS_CPUTIME_ID" },
 #endif
 #ifdef CLOCK_THREAD_CPUTIME_ID
-  { CLOCK_THREAD_CPUTIME_ID, "CLOCK_THREAD_CPUTIME_ID" },
+	{ CLOCK_THREAD_CPUTIME_ID,	"CLOCK_THREAD_CPUTIME_ID" },
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
-  { CLOCK_MONOTONIC_RAW, "CLOCK_MONOTONIC_RAW" },
+	{ CLOCK_MONOTONIC_RAW,		"CLOCK_MONOTONIC_RAW" },
 #endif
 #ifdef CLOCK_REALTIME_COARSE
-  { CLOCK_REALTIME_COARSE, "CLOCK_REALTIME_COARSE" },
+	{ CLOCK_REALTIME_COARSE,	"CLOCK_REALTIME_COARSE" },
 #endif
 #ifdef CLOCK_MONOTONIC_COARSE
-  { CLOCK_MONOTONIC_COARSE, "CLOCK_MONOTONIC_COARSE" },
+	{ CLOCK_MONOTONIC_COARSE,	"CLOCK_MONOTONIC_COARSE" },
 #endif
-  { 0, NULL }
+	{ 0,				NULL }
 };
 
 int
@@ -689,6 +676,16 @@ sys_clock_nanosleep(struct tcb *tcp)
 		else
 			printtv(tcp, tcp->u_arg[3]);
 	}
+	return 0;
+}
+
+int
+sys_clock_adjtime(struct tcb *tcp)
+{
+	if (exiting(tcp))
+		return do_adjtimex(tcp, tcp->u_arg[1]);
+	printxval(clocknames, tcp->u_arg[0], "CLOCK_???");
+	tprints(", ");
 	return 0;
 }
 
@@ -749,7 +746,7 @@ printsigevent(struct tcb *tcp, long arg)
 	struct sigevent sev;
 
 #if SUPPORTED_PERSONALITIES > 1
-	if (personality_wordsize[current_personality] == 4) {
+	if (current_wordsize == 4) {
 		printsigevent32(tcp, arg);
 		return;
 	}
@@ -975,5 +972,3 @@ sys_timerfd_gettime(struct tcb *tcp)
 	}
 	return 0;
 }
-
-#endif /* LINUX */

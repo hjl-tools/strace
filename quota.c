@@ -27,15 +27,9 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
-#ifdef LINUX
-
-#include <inttypes.h>
 
 #define SUBCMDMASK  0x00ff
 #define SUBCMDSHIFT 8
@@ -656,52 +650,3 @@ sys_quotactl(struct tcb *tcp)
 	}
 	return 0;
 }
-
-#endif /* Linux */
-
-#if defined(SUNOS4) || defined(FREEBSD)
-
-#ifdef SUNOS4
-#include <ufs/quota.h>
-#endif
-
-#ifdef FREEBSD
-#include <ufs/ufs/quota.h>
-#endif
-
-static const struct xlat quotacmds[] = {
-	{Q_QUOTAON, "Q_QUOTAON"},
-	{Q_QUOTAOFF, "Q_QUOTAOFF"},
-	{Q_GETQUOTA, "Q_GETQUOTA"},
-	{Q_SETQUOTA, "Q_SETQUOTA"},
-#ifdef Q_SETQLIM
-	{Q_SETQLIM, "Q_SETQLIM"},
-#endif
-#ifdef Q_SETUSE
-	{Q_SETUSE, "Q_SETUSE"},
-#endif
-	{Q_SYNC, "Q_SYNC"},
-	{0, NULL},
-};
-
-int
-sys_quotactl(struct tcb *tcp)
-{
-	/* fourth arg (addr) not interpreted here */
-	if (entering(tcp)) {
-#ifdef SUNOS4
-		printxval(quotacmds, tcp->u_arg[0], "Q_???");
-		tprints(", ");
-		printstr(tcp, tcp->u_arg[1], -1);
-#endif
-#ifdef FREEBSD
-		printpath(tcp, tcp->u_arg[0]);
-		tprints(", ");
-		printxval(quotacmds, tcp->u_arg[1], "Q_???");
-#endif
-		tprintf(", %lu, %#lx", tcp->u_arg[2], tcp->u_arg[3]);
-	}
-	return 0;
-}
-
-#endif /* SUNOS4 || FREEBSD */

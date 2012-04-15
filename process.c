@@ -8,7 +8,6 @@
  *                    <barrow_dj@mail.yahoo.com,djbarrow@de.ibm.com>
  * Copyright (c) 2000 PocketPenguins Inc.  Linux for Hitachi SuperH
  *                    port by Greg Banks <gbanks@pocketpenguins.com>
-
  *
  * All rights reserved.
  *
@@ -33,88 +32,71 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
 #include <sys/utsname.h>
 #include <sys/user.h>
-#include <sys/syscall.h>
-#include <signal.h>
-#ifdef SUNOS4
-#include <machine/reg.h>
-#endif /* SUNOS4 */
-
-#ifdef FREEBSD
-#include <sys/ptrace.h>
-#endif
 
 #ifdef HAVE_SYS_REG_H
 # include <sys/reg.h>
-#ifndef PTRACE_PEEKUSR
-# define PTRACE_PEEKUSR PTRACE_PEEKUSER
-#endif
-#ifndef PTRACE_POKEUSR
-# define PTRACE_POKEUSR PTRACE_POKEUSER
-#endif
+# ifndef PTRACE_PEEKUSR
+#  define PTRACE_PEEKUSR PTRACE_PEEKUSER
+# endif
+# ifndef PTRACE_POKEUSR
+#  define PTRACE_POKEUSR PTRACE_POKEUSER
+# endif
 #endif
 
 #ifdef HAVE_LINUX_PTRACE_H
-#undef PTRACE_SYSCALL
+# undef PTRACE_SYSCALL
 # ifdef HAVE_STRUCT_IA64_FPREG
 #  define ia64_fpreg XXX_ia64_fpreg
 # endif
 # ifdef HAVE_STRUCT_PT_ALL_USER_REGS
 #  define pt_all_user_regs XXX_pt_all_user_regs
 # endif
-#include <linux/ptrace.h>
+# include <linux/ptrace.h>
 # undef ia64_fpreg
 # undef pt_all_user_regs
 #endif
 
-#if defined (LINUX) && defined (SPARC64)
+#if defined(SPARC64)
 # define r_pc r_tpc
 # undef PTRACE_GETREGS
 # define PTRACE_GETREGS PTRACE_GETREGS64
 # undef PTRACE_SETREGS
 # define PTRACE_SETREGS PTRACE_SETREGS64
-#endif /* LINUX && SPARC64 */
+#endif
 
 #ifdef HAVE_LINUX_FUTEX_H
 # include <linux/futex.h>
 #endif
-#ifdef LINUX
-# ifndef FUTEX_WAIT
-#  define FUTEX_WAIT 0
-# endif
-# ifndef FUTEX_WAKE
-#  define FUTEX_WAKE 1
-# endif
-# ifndef FUTEX_FD
-#  define FUTEX_FD 2
-# endif
-# ifndef FUTEX_REQUEUE
-#  define FUTEX_REQUEUE 3
-# endif
-#endif /* LINUX */
+#ifndef FUTEX_WAIT
+# define FUTEX_WAIT 0
+#endif
+#ifndef FUTEX_WAKE
+# define FUTEX_WAKE 1
+#endif
+#ifndef FUTEX_FD
+# define FUTEX_FD 2
+#endif
+#ifndef FUTEX_REQUEUE
+# define FUTEX_REQUEUE 3
+#endif
 
-#ifdef LINUX
 #include <sched.h>
 #include <asm/posix_types.h>
 #undef GETGROUPS_T
 #define GETGROUPS_T __kernel_gid_t
 #undef GETGROUPS32_T
 #define GETGROUPS32_T __kernel_gid32_t
-#endif /* LINUX */
 
-#if defined(LINUX) && defined(IA64)
+#if defined(IA64)
 # include <asm/ptrace_offsets.h>
 # include <asm/rse.h>
 #endif
@@ -249,28 +231,26 @@ static const struct xlat prctl_options[] = {
 	{ 0,			NULL			},
 };
 
-
 static const char *
 unalignctl_string(unsigned int ctl)
 {
-	static char buf[16];
+	static char buf[sizeof(int)*2 + 2];
 
 	switch (ctl) {
 #ifdef PR_UNALIGN_NOPRINT
-	      case PR_UNALIGN_NOPRINT:
-		return "NOPRINT";
+		case PR_UNALIGN_NOPRINT:
+			return "NOPRINT";
 #endif
 #ifdef PR_UNALIGN_SIGBUS
-	      case PR_UNALIGN_SIGBUS:
-		return "SIGBUS";
+		case PR_UNALIGN_SIGBUS:
+			return "SIGBUS";
 #endif
-	      default:
-		break;
+		default:
+			break;
 	}
 	sprintf(buf, "%x", ctl);
 	return buf;
 }
-
 
 int
 sys_prctl(struct tcb *tcp)
@@ -359,16 +339,6 @@ sys_prctl(struct tcb *tcp)
 }
 #endif /* HAVE_PRCTL */
 
-#if defined(FREEBSD) || defined(SUNOS4) || defined(SVR4)
-int
-sys_gethostid(struct tcb *tcp)
-{
-	if (exiting(tcp))
-		return RVAL_HEX;
-	return 0;
-}
-#endif /* FREEBSD || SUNOS4 || SVR4 */
-
 int
 sys_sethostname(struct tcb *tcp)
 {
@@ -379,7 +349,7 @@ sys_sethostname(struct tcb *tcp)
 	return 0;
 }
 
-#if defined(ALPHA) || defined(FREEBSD) || defined(SUNOS4) || defined(SVR4)
+#if defined(ALPHA)
 int
 sys_gethostname(struct tcb *tcp)
 {
@@ -392,7 +362,7 @@ sys_gethostname(struct tcb *tcp)
 	}
 	return 0;
 }
-#endif /* ALPHA || FREEBSD || SUNOS4 || SVR4 */
+#endif
 
 int
 sys_setdomainname(struct tcb *tcp)
@@ -403,22 +373,6 @@ sys_setdomainname(struct tcb *tcp)
 	}
 	return 0;
 }
-
-#if !defined(LINUX)
-
-int
-sys_getdomainname(struct tcb *tcp)
-{
-	if (exiting(tcp)) {
-		if (syserror(tcp))
-			tprintf("%#lx", tcp->u_arg[0]);
-		else
-			printpath(tcp, tcp->u_arg[0]);
-		tprintf(", %lu", tcp->u_arg[1]);
-	}
-	return 0;
-}
-#endif /* !LINUX */
 
 int
 sys_exit(struct tcb *tcp)
@@ -431,70 +385,9 @@ sys_exit(struct tcb *tcp)
 	tprintf("%ld) ", tcp->u_arg[0]);
 	tabto();
 	tprints("= ?\n");
-	printing_tcp = NULL;
+	line_ended();
 	return 0;
 }
-
-#ifdef USE_PROCFS
-
-int
-sys_fork(struct tcb *tcp)
-{
-	if (exiting(tcp) && !syserror(tcp)) {
-		if (getrval2(tcp)) {
-			tcp->auxstr = "child process";
-			return RVAL_UDECIMAL | RVAL_STR;
-		}
-	}
-	return 0;
-}
-
-#if UNIXWARE > 2
-
-int
-sys_rfork(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		tprintf("%ld", tcp->u_arg[0]);
-	}
-	else if (!syserror(tcp)) {
-		if (getrval2(tcp)) {
-			tcp->auxstr = "child process";
-			return RVAL_UDECIMAL | RVAL_STR;
-		}
-	}
-	return 0;
-}
-
-#endif
-
-int
-internal_fork(struct tcb *tcp)
-{
-	struct tcb *tcpchild;
-
-	if (exiting(tcp)) {
-#ifdef SYS_rfork
-		if (known_scno(tcp) == SYS_rfork && !(tcp->u_arg[0]&RFPROC))
-			return 0;
-#endif
-		if (getrval2(tcp))
-			return 0;
-		if (!followfork)
-			return 0;
-		if (syserror(tcp))
-			return 0;
-		tcpchild = alloctcb(tcp->u_rval);
-		if (proc_open(tcpchild, 2) < 0)
-			droptcb(tcpchild);
-		tcpchild->flags |= TCB_STARTUP;
-	}
-	return 0;
-}
-
-#else /* !USE_PROCFS */
-
-#ifdef LINUX
 
 /* defines copied from linux/sched.h since we can't include that
  * ourselves (it conflicts with *lots* of libc includes)
@@ -525,66 +418,66 @@ internal_fork(struct tcb *tcp)
 #define CLONE_IO		0x80000000	/* Clone io context */
 
 static const struct xlat clone_flags[] = {
-    { CLONE_VM,		"CLONE_VM"	},
-    { CLONE_FS,		"CLONE_FS"	},
-    { CLONE_FILES,	"CLONE_FILES"	},
-    { CLONE_SIGHAND,	"CLONE_SIGHAND"	},
-    { CLONE_IDLETASK,	"CLONE_IDLETASK"},
-    { CLONE_PTRACE,	"CLONE_PTRACE"	},
-    { CLONE_VFORK,	"CLONE_VFORK"	},
-    { CLONE_PARENT,	"CLONE_PARENT"	},
-    { CLONE_THREAD,	"CLONE_THREAD" },
-    { CLONE_NEWNS,	"CLONE_NEWNS" },
-    { CLONE_SYSVSEM,	"CLONE_SYSVSEM" },
-    { CLONE_SETTLS,	"CLONE_SETTLS" },
-    { CLONE_PARENT_SETTID,"CLONE_PARENT_SETTID" },
-    { CLONE_CHILD_CLEARTID,"CLONE_CHILD_CLEARTID" },
-    { CLONE_UNTRACED,	"CLONE_UNTRACED" },
-    { CLONE_CHILD_SETTID,"CLONE_CHILD_SETTID" },
-    { CLONE_STOPPED,	"CLONE_STOPPED" },
-    { CLONE_NEWUTS,	"CLONE_NEWUTS" },
-    { CLONE_NEWIPC,	"CLONE_NEWIPC" },
-    { CLONE_NEWUSER,	"CLONE_NEWUSER" },
-    { CLONE_NEWPID,	"CLONE_NEWPID" },
-    { CLONE_NEWNET,	"CLONE_NEWNET" },
-    { CLONE_IO,		"CLONE_IO" },
-    { 0,		NULL		},
+	{ CLONE_VM,		"CLONE_VM"	},
+	{ CLONE_FS,		"CLONE_FS"	},
+	{ CLONE_FILES,		"CLONE_FILES"	},
+	{ CLONE_SIGHAND,	"CLONE_SIGHAND"	},
+	{ CLONE_IDLETASK,	"CLONE_IDLETASK" },
+	{ CLONE_PTRACE,		"CLONE_PTRACE"	},
+	{ CLONE_VFORK,		"CLONE_VFORK"	},
+	{ CLONE_PARENT,		"CLONE_PARENT"	},
+	{ CLONE_THREAD,		"CLONE_THREAD"	},
+	{ CLONE_NEWNS,		"CLONE_NEWNS"	},
+	{ CLONE_SYSVSEM,	"CLONE_SYSVSEM"	},
+	{ CLONE_SETTLS,		"CLONE_SETTLS"	},
+	{ CLONE_PARENT_SETTID,	"CLONE_PARENT_SETTID" },
+	{ CLONE_CHILD_CLEARTID,	"CLONE_CHILD_CLEARTID" },
+	{ CLONE_UNTRACED,	"CLONE_UNTRACED" },
+	{ CLONE_CHILD_SETTID,	"CLONE_CHILD_SETTID" },
+	{ CLONE_STOPPED,	"CLONE_STOPPED"	},
+	{ CLONE_NEWUTS,		"CLONE_NEWUTS"	},
+	{ CLONE_NEWIPC,		"CLONE_NEWIPC"	},
+	{ CLONE_NEWUSER,	"CLONE_NEWUSER"	},
+	{ CLONE_NEWPID,		"CLONE_NEWPID"	},
+	{ CLONE_NEWNET,		"CLONE_NEWNET"	},
+	{ CLONE_IO,		"CLONE_IO"	},
+	{ 0,			NULL		},
 };
 
-# ifdef I386
-#  include <asm/ldt.h>
-#   ifdef HAVE_STRUCT_USER_DESC
-#    define modify_ldt_ldt_s user_desc
-#   endif
+#ifdef I386
+# include <asm/ldt.h>
+#  ifdef HAVE_STRUCT_USER_DESC
+#   define modify_ldt_ldt_s user_desc
+#  endif
 extern void print_ldt_entry();
-# endif
+#endif
 
-# if defined IA64
-#  define ARG_FLAGS	0
-#  define ARG_STACK	1
-#  define ARG_STACKSIZE	(known_scno(tcp) == SYS_clone2 ? 2 : -1)
-#  define ARG_PTID	(known_scno(tcp) == SYS_clone2 ? 3 : 2)
-#  define ARG_CTID	(known_scno(tcp) == SYS_clone2 ? 4 : 3)
-#  define ARG_TLS	(known_scno(tcp) == SYS_clone2 ? 5 : 4)
-# elif defined S390 || defined S390X || defined CRISV10 || defined CRISV32
-#  define ARG_STACK	0
-#  define ARG_FLAGS	1
-#  define ARG_PTID	2
-#  define ARG_CTID	3
-#  define ARG_TLS	4
-# elif defined X86_64 || defined X32 || defined ALPHA
-#  define ARG_FLAGS	0
-#  define ARG_STACK	1
-#  define ARG_PTID	2
-#  define ARG_CTID	3
-#  define ARG_TLS	4
-# else
-#  define ARG_FLAGS	0
-#  define ARG_STACK	1
-#  define ARG_PTID	2
-#  define ARG_TLS	3
-#  define ARG_CTID	4
-# endif
+#if defined IA64
+# define ARG_FLAGS	0
+# define ARG_STACK	1
+# define ARG_STACKSIZE	(tcp->scno == SYS_clone2 ? 2 : -1)
+# define ARG_PTID	(tcp->scno == SYS_clone2 ? 3 : 2)
+# define ARG_CTID	(tcp->scno == SYS_clone2 ? 4 : 3)
+# define ARG_TLS	(tcp->scno == SYS_clone2 ? 5 : 4)
+#elif defined S390 || defined S390X || defined CRISV10 || defined CRISV32
+# define ARG_STACK	0
+# define ARG_FLAGS	1
+# define ARG_PTID	2
+# define ARG_CTID	3
+# define ARG_TLS	4
+#elif defined X86_64 || defined X32 || defined ALPHA
+# define ARG_FLAGS	0
+# define ARG_STACK	1
+# define ARG_PTID	2
+# define ARG_CTID	3
+# define ARG_TLS	4
+#else
+# define ARG_FLAGS	0
+# define ARG_STACK	1
+# define ARG_PTID	2
+# define ARG_TLS	3
+# define ARG_CTID	4
+#endif
 
 int
 sys_clone(struct tcb *tcp)
@@ -593,11 +486,11 @@ sys_clone(struct tcb *tcp)
 		const char *sep = "|";
 		unsigned long flags = tcp->u_arg[ARG_FLAGS];
 		tprintf("child_stack=%#lx, ", tcp->u_arg[ARG_STACK]);
-# ifdef ARG_STACKSIZE
+#ifdef ARG_STACKSIZE
 		if (ARG_STACKSIZE != -1)
 			tprintf("stack_size=%#lx, ",
 				tcp->u_arg[ARG_STACKSIZE]);
-# endif
+#endif
 		tprints("flags=");
 		if (!printflags(clone_flags, flags &~ CSIGNAL, NULL))
 			sep = "";
@@ -609,7 +502,7 @@ sys_clone(struct tcb *tcp)
 		if (flags & CLONE_PARENT_SETTID)
 			tprintf(", parent_tidptr=%#lx", tcp->u_arg[ARG_PTID]);
 		if (flags & CLONE_SETTLS) {
-# ifdef I386
+#ifdef I386
 			struct modify_ldt_ldt_s copy;
 			if (umove(tcp, tcp->u_arg[ARG_TLS], &copy) != -1) {
 				tprintf(", {entry_number:%d, ",
@@ -620,7 +513,7 @@ sys_clone(struct tcb *tcp)
 					print_ldt_entry(&copy);
 			}
 			else
-# endif
+#endif
 				tprintf(", tls=%#lx", tcp->u_arg[ARG_TLS]);
 		}
 		if (flags & (CLONE_CHILD_SETTID|CLONE_CHILD_CLEARTID))
@@ -636,7 +529,6 @@ sys_unshare(struct tcb *tcp)
 		printflags(clone_flags, tcp->u_arg[0], "CLONE_???");
 	return 0;
 }
-#endif /* LINUX */
 
 int
 sys_fork(struct tcb *tcp)
@@ -647,288 +539,12 @@ sys_fork(struct tcb *tcp)
 }
 
 int
-change_syscall(struct tcb *tcp, int new)
-{
-#ifdef LINUX
-#if defined(I386)
-	/* Attempt to make vfork into fork, which we can follow. */
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(ORIG_EAX * 4), new) < 0)
-		return -1;
-	return 0;
-#elif defined(X86_64) || defined(X32)
-	/* Attempt to make vfork into fork, which we can follow. */
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(ORIG_RAX * 8), new) < 0)
-		return -1;
-	return 0;
-#elif defined(POWERPC)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid,
-		   (char*)(sizeof(unsigned long)*PT_R0), new) < 0)
-		return -1;
-	return 0;
-#elif defined(S390) || defined(S390X)
-	/* s390 linux after 2.4.7 has a hook in entry.S to allow this */
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(PT_GPR2), new) < 0)
-		return -1;
-	return 0;
-#elif defined(M68K)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(4*PT_ORIG_D0), new) < 0)
-		return -1;
-	return 0;
-#elif defined(SPARC) || defined(SPARC64)
-	struct pt_regs regs;
-	if (ptrace(PTRACE_GETREGS, tcp->pid, (char*)&regs, 0) < 0)
-		return -1;
-	regs.u_regs[U_REG_G1] = new;
-	if (ptrace(PTRACE_SETREGS, tcp->pid, (char*)&regs, 0) < 0)
-		return -1;
-	return 0;
-#elif defined(MIPS)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(REG_V0), new) < 0)
-		return -1;
-	return 0;
-#elif defined(ALPHA)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(REG_A3), new) < 0)
-		return -1;
-	return 0;
-#elif defined(AVR32)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(REG_R8), new) < 0)
-		return -1;
-	return 0;
-#elif defined(BFIN)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(REG_P0), new) < 0)
-		return -1;
-	return 0;
-#elif defined(IA64)
-	if (ia32) {
-		switch (new) {
-		case 2:
-			break;	/* x86 SYS_fork */
-		case SYS_clone:
-			new = 120;
-			break;
-		default:
-			fprintf(stderr, "%s: unexpected syscall %d\n",
-				__FUNCTION__, new);
-			return -1;
-		}
-		if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(PT_R1), new) < 0)
-			return -1;
-	} else if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(PT_R15), new) < 0)
-		return -1;
-	return 0;
-#elif defined(HPPA)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(PT_GR20), new) < 0)
-		return -1;
-	return 0;
-#elif defined(SH)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(4*(REG_REG0+3)), new) < 0)
-		return -1;
-	return 0;
-#elif defined(SH64)
-	/* Top half of reg encodes the no. of args n as 0x1n.
-	   Assume 0 args as kernel never actually checks... */
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(REG_SYSCALL),
-				0x100000 | new) < 0)
-		return -1;
-	return 0;
-#elif defined(CRISV10) || defined(CRISV32)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(4*PT_R9), new) < 0)
-		return -1;
-	return 0;
-#elif defined(ARM)
-	/* Some kernels support this, some (pre-2.6.16 or so) don't.  */
-# ifndef PTRACE_SET_SYSCALL
-#  define PTRACE_SET_SYSCALL 23
-# endif
-
-	if (ptrace(PTRACE_SET_SYSCALL, tcp->pid, 0, new & 0xffff) != 0)
-		return -1;
-
-	return 0;
-#elif defined(TILE)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid,
-		   (char*)PTREGS_OFFSET_REG(0),
-		   new) != 0)
-		return -1;
-	return 0;
-#elif defined(MICROBLAZE)
-	if (ptrace(PTRACE_POKEUSER, tcp->pid, (char*)(PT_GPR(0)), new) < 0)
-		return -1;
-	return 0;
-#else
-#warning Do not know how to handle change_syscall for this architecture
-#endif /* architecture */
-#endif /* LINUX */
-	return -1;
-}
-
-#ifdef LINUX
-
-int
-internal_fork(struct tcb *tcp)
-{
-	if ((ptrace_setoptions
-	    & (PTRACE_O_TRACECLONE | PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORK))
-	   == (PTRACE_O_TRACECLONE | PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORK))
-		return 0;
-
-	if (!followfork)
-		return 0;
-
-	if (entering(tcp)) {
-		/*
-		 * We won't see the new child if clone is called with
-		 * CLONE_UNTRACED, so we keep the same logic with that option
-		 * and don't trace it.
-		 */
-		if ((sysent[tcp->scno].sys_func == sys_clone) &&
-		    (tcp->u_arg[ARG_FLAGS] & CLONE_UNTRACED))
-			return 0;
-		setbpt(tcp);
-	} else {
-		if (tcp->flags & TCB_BPTSET)
-			clearbpt(tcp);
-	}
-	return 0;
-}
-
-#else /* !LINUX */
-
-int
-internal_fork(struct tcb *tcp)
-{
-	struct tcb *tcpchild;
-	int pid;
-	int dont_follow = 0;
-
-#ifdef SYS_vfork
-	if (known_scno(tcp) == SYS_vfork) {
-		/* Attempt to make vfork into fork, which we can follow. */
-		if (change_syscall(tcp, SYS_fork) < 0)
-			dont_follow = 1;
-	}
-#endif
-
-	if (!followfork)
-		return 0;
-
-	if (entering(tcp)) {
-		if (dont_follow)
-			return 0;
-		setbpt(tcp);
-	}
-	else {
-		int bpt = tcp->flags & TCB_BPTSET;
-
-		if (bpt)
-			clearbpt(tcp);
-
-		if (syserror(tcp))
-			return 0;
-
-		pid = tcp->u_rval;
-		tcpchild = alloctcb(pid);
-#ifdef SUNOS4
-#ifdef oldway
-		/* The child must have run before it can be attached. */
-		{
-			struct timeval tv;
-			tv.tv_sec = 0;
-			tv.tv_usec = 10000;
-			select(0, NULL, NULL, NULL, &tv);
-		}
-		if (ptrace(PTRACE_ATTACH, pid, (char *)1, 0) < 0) {
-			perror("PTRACE_ATTACH");
-			fprintf(stderr, "Too late?\n");
-			droptcb(tcpchild);
-			return 0;
-		}
-#else /* !oldway */
-		/* Try to catch the new process as soon as possible. */
-		{
-			int i;
-			for (i = 0; i < 1024; i++)
-				if (ptrace(PTRACE_ATTACH, pid, (char *) 1, 0) >= 0)
-					break;
-			if (i == 1024) {
-				perror("PTRACE_ATTACH");
-				fprintf(stderr, "Too late?\n");
-				droptcb(tcpchild);
-				return 0;
-			}
-		}
-#endif /* !oldway */
-#endif /* SUNOS4 */
-		tcpchild->flags |= TCB_ATTACHED | TCB_STARTUP | TCB_IGNORE_ONE_SIGSTOP;
-		/* Child has BPT too, must be removed on first occasion */
-		if (bpt) {
-			tcpchild->flags |= TCB_BPTSET;
-			tcpchild->baddr = tcp->baddr;
-			memcpy(tcpchild->inst, tcp->inst,
-				sizeof tcpchild->inst);
-		}
-		if (!qflag)
-			fprintf(stderr, "Process %d attached\n", pid);
-	}
-	return 0;
-}
-
-#endif /* !LINUX */
-
-#endif /* !USE_PROCFS */
-
-#if defined(SUNOS4) || defined(LINUX) || defined(FREEBSD)
-
-int
 sys_vfork(struct tcb *tcp)
 {
 	if (exiting(tcp))
 		return RVAL_UDECIMAL;
 	return 0;
 }
-
-#endif /* SUNOS4 || LINUX || FREEBSD */
-
-#ifndef LINUX
-
-static char idstr[16];
-
-int
-sys_getpid(struct tcb *tcp)
-{
-	if (exiting(tcp)) {
-		sprintf(idstr, "ppid %lu", getrval2(tcp));
-		tcp->auxstr = idstr;
-		return RVAL_STR;
-	}
-	return 0;
-}
-
-int
-sys_getuid(struct tcb *tcp)
-{
-	if (exiting(tcp)) {
-		sprintf(idstr, "euid %lu", getrval2(tcp));
-		tcp->auxstr = idstr;
-		return RVAL_STR;
-	}
-	return 0;
-}
-
-int
-sys_getgid(struct tcb *tcp)
-{
-	if (exiting(tcp)) {
-		sprintf(idstr, "egid %lu", getrval2(tcp));
-		tcp->auxstr = idstr;
-		return RVAL_STR;
-	}
-	return 0;
-}
-
-#endif /* !LINUX */
-
-#ifdef LINUX
 
 int sys_getuid(struct tcb *tcp)
 {
@@ -951,15 +567,6 @@ sys_setuid(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		tprintf("%u", (uid_t) tcp->u_arg[0]);
-	}
-	return 0;
-}
-
-int
-sys_setgid(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		tprintf("%u", (gid_t) tcp->u_arg[0]);
 	}
 	return 0;
 }
@@ -991,34 +598,6 @@ sys_getresuid(struct tcb *tcp)
 }
 
 int
-sys_getresgid(struct tcb *tcp)
-{
-	if (exiting(tcp)) {
-		__kernel_gid_t gid;
-		if (syserror(tcp))
-			tprintf("%#lx, %#lx, %#lx", tcp->u_arg[0],
-				tcp->u_arg[1], tcp->u_arg[2]);
-		else {
-			if (umove(tcp, tcp->u_arg[0], &gid) < 0)
-				tprintf("%#lx, ", tcp->u_arg[0]);
-			else
-				tprintf("[%lu], ", (unsigned long) gid);
-			if (umove(tcp, tcp->u_arg[1], &gid) < 0)
-				tprintf("%#lx, ", tcp->u_arg[1]);
-			else
-				tprintf("[%lu], ", (unsigned long) gid);
-			if (umove(tcp, tcp->u_arg[2], &gid) < 0)
-				tprintf("%#lx", tcp->u_arg[2]);
-			else
-				tprintf("[%lu]", (unsigned long) gid);
-		}
-	}
-	return 0;
-}
-
-#endif /* LINUX */
-
-int
 sys_setreuid(struct tcb *tcp)
 {
 	if (entering(tcp)) {
@@ -1029,17 +608,6 @@ sys_setreuid(struct tcb *tcp)
 }
 
 int
-sys_setregid(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		printuid("", tcp->u_arg[0]);
-		printuid(", ", tcp->u_arg[1]);
-	}
-	return 0;
-}
-
-#if defined(LINUX) || defined(FREEBSD)
-int
 sys_setresuid(struct tcb *tcp)
 {
 	if (entering(tcp)) {
@@ -1049,18 +617,6 @@ sys_setresuid(struct tcb *tcp)
 	}
 	return 0;
 }
-int
-sys_setresgid(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		printuid("", tcp->u_arg[0]);
-		printuid(", ", tcp->u_arg[1]);
-		printuid(", ", tcp->u_arg[2]);
-	}
-	return 0;
-}
-
-#endif /* LINUX || FREEBSD */
 
 int
 sys_setgroups(struct tcb *tcp)
@@ -1179,7 +735,6 @@ sys_getgroups(struct tcb *tcp)
 	return 0;
 }
 
-#ifdef LINUX
 int
 sys_setgroups32(struct tcb *tcp)
 {
@@ -1292,197 +847,6 @@ sys_getgroups32(struct tcb *tcp)
 	}
 	return 0;
 }
-#endif /* LINUX */
-
-#if defined(ALPHA) || defined(SUNOS4) || defined(SVR4)
-int
-sys_setpgrp(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-#ifndef SVR4
-		tprintf("%lu, %lu", tcp->u_arg[0], tcp->u_arg[1]);
-#endif /* !SVR4 */
-	}
-	return 0;
-}
-#endif /* ALPHA || SUNOS4 || SVR4 */
-
-int
-sys_getpgrp(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-#ifndef SVR4
-		tprintf("%lu", tcp->u_arg[0]);
-#endif /* !SVR4 */
-	}
-	return 0;
-}
-
-int
-sys_getsid(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		tprintf("%lu", tcp->u_arg[0]);
-	}
-	return 0;
-}
-
-int
-sys_setsid(struct tcb *tcp)
-{
-	return 0;
-}
-
-int
-sys_getpgid(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		tprintf("%lu", tcp->u_arg[0]);
-	}
-	return 0;
-}
-
-int
-sys_setpgid(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		tprintf("%lu, %lu", tcp->u_arg[0], tcp->u_arg[1]);
-	}
-	return 0;
-}
-
-#if UNIXWARE >= 2
-
-#include <sys/privilege.h>
-
-
-static const struct xlat procpriv_cmds[] = {
-	{ SETPRV,	"SETPRV"	},
-	{ CLRPRV,	"CLRPRV"	},
-	{ PUTPRV,	"PUTPRV"	},
-	{ GETPRV,	"GETPRV"	},
-	{ CNTPRV,	"CNTPRV"	},
-	{ 0,		NULL		},
-};
-
-
-static const struct xlat procpriv_priv[] = {
-	{ P_OWNER,	"P_OWNER"	},
-	{ P_AUDIT,	"P_AUDIT"	},
-	{ P_COMPAT,	"P_COMPAT"	},
-	{ P_DACREAD,	"P_DACREAD"	},
-	{ P_DACWRITE,	"P_DACWRITE"	},
-	{ P_DEV,	"P_DEV"		},
-	{ P_FILESYS,	"P_FILESYS"	},
-	{ P_MACREAD,	"P_MACREAD"	},
-	{ P_MACWRITE,	"P_MACWRITE"	},
-	{ P_MOUNT,	"P_MOUNT"	},
-	{ P_MULTIDIR,	"P_MULTIDIR"	},
-	{ P_SETPLEVEL,	"P_SETPLEVEL"	},
-	{ P_SETSPRIV,	"P_SETSPRIV"	},
-	{ P_SETUID,	"P_SETUID"	},
-	{ P_SYSOPS,	"P_SYSOPS"	},
-	{ P_SETUPRIV,	"P_SETUPRIV"	},
-	{ P_DRIVER,	"P_DRIVER"	},
-	{ P_RTIME,	"P_RTIME"	},
-	{ P_MACUPGRADE,	"P_MACUPGRADE"	},
-	{ P_FSYSRANGE,	"P_FSYSRANGE"	},
-	{ P_SETFLEVEL,	"P_SETFLEVEL"	},
-	{ P_AUDITWR,	"P_AUDITWR"	},
-	{ P_TSHAR,	"P_TSHAR"	},
-	{ P_PLOCK,	"P_PLOCK"	},
-	{ P_CORE,	"P_CORE"	},
-	{ P_LOADMOD,	"P_LOADMOD"	},
-	{ P_BIND,	"P_BIND"	},
-	{ P_ALLPRIVS,	"P_ALLPRIVS"	},
-	{ 0,		NULL		},
-};
-
-
-static const struct xlat procpriv_type[] = {
-	{ PS_FIX,	"PS_FIX"	},
-	{ PS_INH,	"PS_INH"	},
-	{ PS_MAX,	"PS_MAX"	},
-	{ PS_WKG,	"PS_WKG"	},
-	{ 0,		NULL		},
-};
-
-
-static void
-printpriv(struct tcb *tcp, long addr, int len, const struct xlat *opt)
-{
-	priv_t buf[128];
-	int max = verbose(tcp) ? ARRAY_SIZE(buf) : 10;
-	int dots = len > max;
-	int i;
-
-	if (len > max) len = max;
-
-	if (len <= 0 ||
-	    umoven(tcp, addr, len * sizeof buf[0], (char *) buf) < 0)
-	{
-		tprintf("%#lx", addr);
-		return;
-	}
-
-	tprints("[");
-
-	for (i = 0; i < len; ++i) {
-		const char *t, *p;
-
-		if (i) tprints(", ");
-
-		if ((t = xlookup(procpriv_type, buf[i] & PS_TYPE)) &&
-		    (p = xlookup(procpriv_priv, buf[i] & ~PS_TYPE)))
-		{
-			tprintf("%s|%s", t, p);
-		}
-		else {
-			tprintf("%#lx", buf[i]);
-		}
-	}
-
-	if (dots) tprints(" ...");
-
-	tprints("]");
-}
-
-
-int
-sys_procpriv(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		printxval(procpriv_cmds, tcp->u_arg[0], "???PRV");
-		switch (tcp->u_arg[0]) {
-		    case CNTPRV:
-			tprintf(", %#lx, %ld", tcp->u_arg[1], tcp->u_arg[2]);
-			break;
-
-		    case GETPRV:
-			break;
-
-		    default:
-			tprints(", ");
-			printpriv(tcp, tcp->u_arg[1], tcp->u_arg[2]);
-			tprintf(", %ld", tcp->u_arg[2]);
-		}
-	}
-	else if (tcp->u_arg[0] == GETPRV) {
-		if (syserror(tcp)) {
-			tprintf(", %#lx, %ld", tcp->u_arg[1], tcp->u_arg[2]);
-		}
-		else {
-			tprints(", ");
-			printpriv(tcp, tcp->u_arg[1], tcp->u_rval);
-			tprintf(", %ld", tcp->u_arg[2]);
-		}
-	}
-
-	return 0;
-}
-
-#endif /* UNIXWARE */
-
 
 static void
 printargv(struct tcb *tcp, long addr)
@@ -1494,21 +858,21 @@ printargv(struct tcb *tcp, long addr)
 	} cp;
 	const char *sep;
 	int n = 0;
+	unsigned wordsize = current_wordsize;
 
 	cp.p64 = 1;
 	for (sep = ""; !abbrev(tcp) || n < max_strlen / 2; sep = ", ", ++n) {
-		if (umoven(tcp, addr, personality_wordsize[current_personality],
-			   cp.data) < 0) {
+		if (umoven(tcp, addr, wordsize, cp.data) < 0) {
 			tprintf("%#lx", addr);
 			return;
 		}
-		if (personality_wordsize[current_personality] == 4)
+		if (wordsize == 4)
 			cp.p64 = cp.p32;
 		if (cp.p64 == 0)
 			break;
 		tprints(sep);
 		printstr(tcp, cp.p64, -1);
-		addr += personality_wordsize[current_personality];
+		addr += wordsize;
 	}
 	if (cp.p64)
 		tprintf("%s...", sep);
@@ -1526,7 +890,7 @@ printargc(const char *fmt, struct tcb *tcp, long addr)
 	tprintf(fmt, count, count == 1 ? "" : "s");
 }
 
-#if defined(SPARC) || defined(SPARC64) || defined(SUNOS4)
+#if defined(SPARC) || defined(SPARC64)
 int
 sys_execv(struct tcb *tcp)
 {
@@ -1542,7 +906,7 @@ sys_execv(struct tcb *tcp)
 	}
 	return 0;
 }
-#endif /* SPARC || SPARC64 || SUNOS4 */
+#endif
 
 int
 sys_execve(struct tcb *tcp)
@@ -1569,41 +933,6 @@ sys_execve(struct tcb *tcp)
 	return 0;
 }
 
-#if UNIXWARE > 2
-
-int sys_rexecve(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		sys_execve(tcp);
-		tprintf(", %ld", tcp->u_arg[3]);
-	}
-	return 0;
-}
-
-#endif
-
-#if defined SUNOS4 || (defined LINUX && defined TCB_WAITEXECVE)
-int
-internal_exec(struct tcb *tcp)
-{
-# if defined SUNOS4
-	if (exiting(tcp) && !syserror(tcp) && followfork)
-		fixvfork(tcp);
-# endif
-# if defined LINUX && defined TCB_WAITEXECVE
-	if (exiting(tcp) && syserror(tcp))
-		tcp->flags &= ~TCB_WAITEXECVE;
-	else {
-		/* Maybe we have post-execve SIGTRAP suppressed? */
-		if (!(ptrace_setoptions & PTRACE_O_TRACEEXEC))
-			tcp->flags |= TCB_WAITEXECVE; /* no */
-	}
-# endif
-	return 0;
-}
-#endif
-
-#ifdef LINUX
 #ifndef __WNOTHREAD
 #define __WNOTHREAD	0x20000000
 #endif
@@ -1613,7 +942,6 @@ internal_exec(struct tcb *tcp)
 #ifndef __WCLONE
 #define __WCLONE	0x80000000
 #endif
-#endif /* LINUX */
 
 static const struct xlat wait4_options[] = {
 	{ WNOHANG,	"WNOHANG"	},
@@ -1654,15 +982,13 @@ static const struct xlat wait4_options[] = {
 # define WCOREFLAG 0x80
 #endif
 #ifndef WCOREDUMP
-# define WCOREDUMP(status) ((status) & 0200)
+# define WCOREDUMP(status)  ((status) & 0200)
 #endif
-
-
 #ifndef W_STOPCODE
-#define W_STOPCODE(sig)		((sig) << 8 | 0x7f)
+# define W_STOPCODE(sig)  ((sig) << 8 | 0x7f)
 #endif
 #ifndef W_EXITCODE
-#define W_EXITCODE(ret, sig)	((ret) << 8 | (sig))
+# define W_EXITCODE(ret, sig)  ((ret) << 8 | (sig))
 #endif
 
 static int
@@ -1709,12 +1035,8 @@ static int
 printwaitn(struct tcb *tcp, int n, int bitness)
 {
 	int status;
-#ifdef SUNOS4
-	int exited = 0;
-#endif
 
 	if (entering(tcp)) {
-#ifdef LINUX
 		/* On Linux, kernel-side pid_t is typedef'ed to int
 		 * on all arches. Also, glibc-2.8 truncates wait3 and wait4
 		 * pid argument to int on 64bit arches, producing,
@@ -1723,15 +1045,6 @@ printwaitn(struct tcb *tcp, int n, int bitness)
 		 */
 		int pid = tcp->u_arg[0];
 		tprintf("%d, ", pid);
-#else
-		long pid = tcp->u_arg[0];
-# if SUPPORTED_PERSONALITIES > 1
-		/* Sign-extend a 32-bit value when that's what it is. */
-		if (personality_wordsize[current_personality] < sizeof pid)
-			pid = (long) (int) pid;
-# endif
-		tprintf("%ld, ", pid);
-#endif
 	} else {
 		/* status */
 		if (!tcp->u_arg[1])
@@ -1741,9 +1054,6 @@ printwaitn(struct tcb *tcp, int n, int bitness)
 		else if (umove(tcp, tcp->u_arg[1], &status) < 0)
 			tprints("[?]");
 		else
-#ifdef SUNOS4
-			exited =
-#endif
 			printstatus(status);
 		/* options */
 		tprints(", ");
@@ -1753,7 +1063,6 @@ printwaitn(struct tcb *tcp, int n, int bitness)
 			/* usage */
 			if (!tcp->u_arg[3])
 				tprints("NULL");
-#ifdef LINUX
 			else if (tcp->u_rval > 0) {
 #ifdef ALPHA
 				if (bitness)
@@ -1762,50 +1071,12 @@ printwaitn(struct tcb *tcp, int n, int bitness)
 #endif
 					printrusage(tcp, tcp->u_arg[3]);
 			}
-#endif /* LINUX */
-#ifdef SUNOS4
-			else if (tcp->u_rval > 0 && exited)
-				printrusage(tcp, tcp->u_arg[3]);
-#endif /* SUNOS4 */
 			else
 				tprintf("%#lx", tcp->u_arg[3]);
 		}
 	}
 	return 0;
 }
-
-#ifdef SVR4
-
-int
-sys_wait(struct tcb *tcp)
-{
-	if (exiting(tcp)) {
-		/* The library wrapper stuffs this into the user variable. */
-		if (!syserror(tcp))
-			printstatus(getrval2(tcp));
-	}
-	return 0;
-}
-
-#endif /* SVR4 */
-
-#ifdef FREEBSD
-int
-sys_wait(struct tcb *tcp)
-{
-	int status;
-
-	if (exiting(tcp)) {
-		if (!syserror(tcp)) {
-			if (umove(tcp, tcp->u_arg[0], &status) < 0)
-				tprintf("%#lx", tcp->u_arg[0]);
-			else
-				printstatus(status);
-		}
-	}
-	return 0;
-}
-#endif
 
 int
 sys_waitpid(struct tcb *tcp)
@@ -1826,8 +1097,6 @@ sys_osf_wait4(struct tcb *tcp)
 	return printwaitn(tcp, 4, 1);
 }
 #endif
-
-#if defined SVR4 || defined LINUX
 
 static const struct xlat waitid_types[] = {
 	{ P_PID,	"P_PID"		},
@@ -1890,16 +1159,6 @@ sys_waitid(struct tcb *tcp)
 	return 0;
 }
 
-#endif /* SVR4 or LINUX */
-
-int
-sys_alarm(struct tcb *tcp)
-{
-	if (entering(tcp))
-		tprintf("%lu", tcp->u_arg[0]);
-	return 0;
-}
-
 int
 sys_uname(struct tcb *tcp)
 {
@@ -1917,10 +1176,8 @@ sys_uname(struct tcb *tcp)
 			tprintf("release=\"%s\", version=\"%s\", ",
 				uname.release, uname.version);
 			tprintf("machine=\"%s\"", uname.machine);
-#ifdef LINUX
 #ifndef __GLIBC__
 			tprintf(", domainname=\"%s\"", uname.domainname);
-#endif
 #endif
 			tprints("}");
 		}
@@ -1931,10 +1188,7 @@ sys_uname(struct tcb *tcp)
 	return 0;
 }
 
-#ifndef SVR4
-
 static const struct xlat ptrace_cmds[] = {
-# ifndef FREEBSD
 	{ PTRACE_TRACEME,	"PTRACE_TRACEME"	},
 	{ PTRACE_PEEKTEXT,	"PTRACE_PEEKTEXT"	},
 	{ PTRACE_PEEKDATA,	"PTRACE_PEEKDATA"	},
@@ -1947,148 +1201,96 @@ static const struct xlat ptrace_cmds[] = {
 	{ PTRACE_SINGLESTEP,	"PTRACE_SINGLESTEP"	},
 	{ PTRACE_ATTACH,	"PTRACE_ATTACH"		},
 	{ PTRACE_DETACH,	"PTRACE_DETACH"		},
-#  ifdef PTRACE_GETREGS
+#ifdef PTRACE_GETREGS
 	{ PTRACE_GETREGS,	"PTRACE_GETREGS"	},
-#  endif
-#  ifdef PTRACE_SETREGS
+#endif
+#ifdef PTRACE_SETREGS
 	{ PTRACE_SETREGS,	"PTRACE_SETREGS"	},
-#  endif
-#  ifdef PTRACE_GETFPREGS
+#endif
+#ifdef PTRACE_GETFPREGS
 	{ PTRACE_GETFPREGS,	"PTRACE_GETFPREGS"	},
-#  endif
-#  ifdef PTRACE_SETFPREGS
+#endif
+#ifdef PTRACE_SETFPREGS
 	{ PTRACE_SETFPREGS,	"PTRACE_SETFPREGS"	},
-#  endif
-#  ifdef PTRACE_GETFPXREGS
+#endif
+#ifdef PTRACE_GETFPXREGS
 	{ PTRACE_GETFPXREGS,	"PTRACE_GETFPXREGS"	},
-#  endif
-#  ifdef PTRACE_SETFPXREGS
+#endif
+#ifdef PTRACE_SETFPXREGS
 	{ PTRACE_SETFPXREGS,	"PTRACE_SETFPXREGS"	},
-#  endif
-#  ifdef PTRACE_GETVRREGS
+#endif
+#ifdef PTRACE_GETVRREGS
 	{ PTRACE_GETVRREGS,	"PTRACE_GETVRREGS"	},
-#  endif
-#  ifdef PTRACE_SETVRREGS
+#endif
+#ifdef PTRACE_SETVRREGS
 	{ PTRACE_SETVRREGS,	"PTRACE_SETVRREGS"	},
-#  endif
-#  ifdef PTRACE_SETOPTIONS
+#endif
+#ifdef PTRACE_SETOPTIONS
 	{ PTRACE_SETOPTIONS,	"PTRACE_SETOPTIONS"	},
-#  endif
-#  ifdef PTRACE_GETEVENTMSG
+#endif
+#ifdef PTRACE_GETEVENTMSG
 	{ PTRACE_GETEVENTMSG,	"PTRACE_GETEVENTMSG"	},
-#  endif
-#  ifdef PTRACE_GETSIGINFO
+#endif
+#ifdef PTRACE_GETSIGINFO
 	{ PTRACE_GETSIGINFO,	"PTRACE_GETSIGINFO"	},
-#  endif
-#  ifdef PTRACE_SETSIGINFO
+#endif
+#ifdef PTRACE_SETSIGINFO
 	{ PTRACE_SETSIGINFO,	"PTRACE_SETSIGINFO"	},
-#  endif
-#  ifdef PTRACE_GETREGSET
+#endif
+#ifdef PTRACE_GETREGSET
 	{ PTRACE_GETREGSET,	"PTRACE_GETREGSET"	},
-#  endif
-#  ifdef PTRACE_SETREGSET
+#endif
+#ifdef PTRACE_SETREGSET
 	{ PTRACE_SETREGSET,	"PTRACE_SETREGSET"	},
-#  endif
-#  ifdef PTRACE_SET_SYSCALL
+#endif
+#ifdef PTRACE_SET_SYSCALL
 	{ PTRACE_SET_SYSCALL,	"PTRACE_SET_SYSCALL"	},
-#  endif
-#  ifdef PTRACE_SEIZE
+#endif
+#ifdef PTRACE_SEIZE
 	{ PTRACE_SEIZE,		"PTRACE_SEIZE"		},
-#  endif
-#  ifdef PTRACE_INTERRUPT
+#endif
+#ifdef PTRACE_INTERRUPT
 	{ PTRACE_INTERRUPT,	"PTRACE_INTERRUPT"	},
-#  endif
-#  ifdef PTRACE_LISTEN
+#endif
+#ifdef PTRACE_LISTEN
 	{ PTRACE_LISTEN,	"PTRACE_LISTEN"		},
-#  endif
-#  ifdef SUNOS4
-	{ PTRACE_READDATA,	"PTRACE_READDATA"	},
-	{ PTRACE_WRITEDATA,	"PTRACE_WRITEDATA"	},
-	{ PTRACE_READTEXT,	"PTRACE_READTEXT"	},
-	{ PTRACE_WRITETEXT,	"PTRACE_WRITETEXT"	},
-	{ PTRACE_GETFPAREGS,	"PTRACE_GETFPAREGS"	},
-	{ PTRACE_SETFPAREGS,	"PTRACE_SETFPAREGS"	},
-#   ifdef SPARC
-	{ PTRACE_GETWINDOW,	"PTRACE_GETWINDOW"	},
-	{ PTRACE_SETWINDOW,	"PTRACE_SETWINDOW"	},
-#   else /* !SPARC */
-	{ PTRACE_22,		"PTRACE_22"		},
-	{ PTRACE_23,		"PTRACE_3"		},
-#   endif /* !SPARC */
-#  endif /* SUNOS4 */
+#endif
 	{ PTRACE_SYSCALL,	"PTRACE_SYSCALL"	},
-#  ifdef SUNOS4
-	{ PTRACE_DUMPCORE,	"PTRACE_DUMPCORE"	},
-#   ifdef I386
-	{ PTRACE_SETWRBKPT,	"PTRACE_SETWRBKPT"	},
-	{ PTRACE_SETACBKPT,	"PTRACE_SETACBKPT"	},
-	{ PTRACE_CLRDR7,	"PTRACE_CLRDR7"		},
-#   else /* !I386 */
-	{ PTRACE_26,		"PTRACE_26"		},
-	{ PTRACE_27,		"PTRACE_27"		},
-	{ PTRACE_28,		"PTRACE_28"		},
-#   endif /* !I386 */
-	{ PTRACE_GETUCODE,	"PTRACE_GETUCODE"	},
-#  endif /* SUNOS4 */
 
-# else /* FREEBSD */
-
-	{ PT_TRACE_ME,		"PT_TRACE_ME"		},
-	{ PT_READ_I,		"PT_READ_I"		},
-	{ PT_READ_D,		"PT_READ_D"		},
-	{ PT_WRITE_I,		"PT_WRITE_I"		},
-	{ PT_WRITE_D,		"PT_WRITE_D"		},
-#  ifdef PT_READ_U
-	{ PT_READ_U,		"PT_READ_U"		},
-#  endif
-	{ PT_CONTINUE,		"PT_CONTINUE"		},
-	{ PT_KILL,		"PT_KILL"		},
-	{ PT_STEP,		"PT_STEP"		},
-	{ PT_ATTACH,		"PT_ATTACH"		},
-	{ PT_DETACH,		"PT_DETACH"		},
-	{ PT_GETREGS,		"PT_GETREGS"		},
-	{ PT_SETREGS,		"PT_SETREGS"		},
-	{ PT_GETFPREGS,		"PT_GETFPREGS"		},
-	{ PT_SETFPREGS,		"PT_SETFPREGS"		},
-	{ PT_GETDBREGS,		"PT_GETDBREGS"		},
-	{ PT_SETDBREGS,		"PT_SETDBREGS"		},
-# endif /* FREEBSD */
 	{ 0,			NULL			},
 };
 
-# ifndef FREEBSD
-#  ifdef PTRACE_SETOPTIONS
+#ifdef PTRACE_SETOPTIONS
 static const struct xlat ptrace_setoptions_flags[] = {
-#   ifdef PTRACE_O_TRACESYSGOOD
+# ifdef PTRACE_O_TRACESYSGOOD
 	{ PTRACE_O_TRACESYSGOOD,"PTRACE_O_TRACESYSGOOD"	},
-#   endif
-#   ifdef PTRACE_O_TRACEFORK
+# endif
+# ifdef PTRACE_O_TRACEFORK
 	{ PTRACE_O_TRACEFORK,	"PTRACE_O_TRACEFORK"	},
-#   endif
-#   ifdef PTRACE_O_TRACEVFORK
+# endif
+# ifdef PTRACE_O_TRACEVFORK
 	{ PTRACE_O_TRACEVFORK,	"PTRACE_O_TRACEVFORK"	},
-#   endif
-#   ifdef PTRACE_O_TRACECLONE
+# endif
+# ifdef PTRACE_O_TRACECLONE
 	{ PTRACE_O_TRACECLONE,	"PTRACE_O_TRACECLONE"	},
-#   endif
-#   ifdef PTRACE_O_TRACEEXEC
+# endif
+# ifdef PTRACE_O_TRACEEXEC
 	{ PTRACE_O_TRACEEXEC,	"PTRACE_O_TRACEEXEC"	},
-#   endif
-#   ifdef PTRACE_O_TRACEVFORKDONE
+# endif
+# ifdef PTRACE_O_TRACEVFORKDONE
 	{ PTRACE_O_TRACEVFORKDONE,"PTRACE_O_TRACEVFORKDONE"},
-#   endif
-#   ifdef PTRACE_O_TRACEEXIT
+# endif
+# ifdef PTRACE_O_TRACEEXIT
 	{ PTRACE_O_TRACEEXIT,	"PTRACE_O_TRACEEXIT"	},
-#   endif
+# endif
 	{ 0,			NULL			},
 };
-#  endif /* PTRACE_SETOPTIONS */
-# endif /* !FREEBSD */
+#endif /* PTRACE_SETOPTIONS */
 
-# ifndef FREEBSD
+#define uoff(member)	offsetof(struct user, member)
+
 const struct xlat struct_user_offsets[] = {
-#  ifdef LINUX
-#   if defined(S390) || defined(S390X)
+#if defined(S390) || defined(S390X)
 	{ PT_PSWMASK,		"psw_mask"				},
 	{ PT_PSWADDR,		"psw_addr"				},
 	{ PT_GPR0,		"gpr0"					},
@@ -2125,7 +1327,7 @@ const struct xlat struct_user_offsets[] = {
 	{ PT_ACR15,		"acr15"					},
 	{ PT_ORIGGPR2,		"orig_gpr2"				},
 	{ PT_FPC,		"fpc"					},
-#    if defined(S390)
+#if defined(S390)
 	{ PT_FPR0_HI,		"fpr0.hi"				},
 	{ PT_FPR0_LO,		"fpr0.lo"				},
 	{ PT_FPR1_HI,		"fpr1.hi"				},
@@ -2158,8 +1360,8 @@ const struct xlat struct_user_offsets[] = {
 	{ PT_FPR14_LO,		"fpr14.lo"				},
 	{ PT_FPR15_HI,		"fpr15.hi"				},
 	{ PT_FPR15_LO,		"fpr15.lo"				},
-#    endif
-#    if defined(S390X)
+#endif
+#if defined(S390X)
 	{ PT_FPR0,		"fpr0"					},
 	{ PT_FPR1,		"fpr1"					},
 	{ PT_FPR2,		"fpr2"					},
@@ -2176,20 +1378,20 @@ const struct xlat struct_user_offsets[] = {
 	{ PT_FPR13,		"fpr13"					},
 	{ PT_FPR14,		"fpr14"					},
 	{ PT_FPR15,		"fpr15"					},
-#    endif
+#endif
 	{ PT_CR_9,		"cr9"					},
 	{ PT_CR_10,		"cr10"					},
 	{ PT_CR_11,		"cr11"					},
 	{ PT_IEEE_IP,		"ieee_exception_ip"			},
-#   elif defined(SPARC)
+#elif defined(SPARC)
 	/* XXX No support for these offsets yet. */
-#   elif defined(HPPA)
+#elif defined(HPPA)
 	/* XXX No support for these offsets yet. */
-#   elif defined(POWERPC)
-#    ifndef PT_ORIG_R3
-#     define PT_ORIG_R3 34
-#    endif
-#    define REGSIZE (sizeof(unsigned long))
+#elif defined(POWERPC)
+# ifndef PT_ORIG_R3
+#  define PT_ORIG_R3 34
+# endif
+# define REGSIZE (sizeof(unsigned long))
 	{ REGSIZE*PT_R0,		"r0"				},
 	{ REGSIZE*PT_R1,		"r1"				},
 	{ REGSIZE*PT_R2,		"r2"				},
@@ -2230,8 +1432,8 @@ const struct xlat struct_user_offsets[] = {
 	{ REGSIZE*PT_XER,		"XER"				},
 	{ REGSIZE*PT_CCR,		"CCR"				},
 	{ REGSIZE*PT_FPR0,		"FPR0"				},
-#    undef REGSIZE
-#   elif defined(ALPHA)
+# undef REGSIZE
+#elif defined(ALPHA)
 	{ 0,			"r0"					},
 	{ 1,			"r1"					},
 	{ 2,			"r2"					},
@@ -2297,7 +1499,7 @@ const struct xlat struct_user_offsets[] = {
 	{ 62,			"fp30"					},
 	{ 63,			"fp31"					},
 	{ 64,			"pc"					},
-#   elif defined(IA64)
+#elif defined(IA64)
 	{ PT_F32, "f32" }, { PT_F33, "f33" }, { PT_F34, "f34" },
 	{ PT_F35, "f35" }, { PT_F36, "f36" }, { PT_F37, "f37" },
 	{ PT_F38, "f38" }, { PT_F39, "f39" }, { PT_F40, "f40" },
@@ -2362,14 +1564,14 @@ const struct xlat struct_user_offsets[] = {
 	{ PT_AR_CCV, "ar.ccv" }, { PT_AR_FPSR, "ar.fpsr" },
 	{ PT_B0, "b0" }, { PT_B7, "b7" }, { PT_F6, "f6" },
 	{ PT_F7, "f7" }, { PT_F8, "f8" }, { PT_F9, "f9" },
-#    ifdef PT_AR_CSD
+# ifdef PT_AR_CSD
 	{ PT_AR_CSD, "ar.csd" },
-#    endif
-#    ifdef PT_AR_SSD
+# endif
+# ifdef PT_AR_SSD
 	{ PT_AR_SSD, "ar.ssd" },
-#    endif
+# endif
 	{ PT_DBR, "dbr" }, { PT_IBR, "ibr" }, { PT_PMD, "pmd" },
-#   elif defined(I386)
+#elif defined(I386)
 	{ 4*EBX,		"4*EBX"					},
 	{ 4*ECX,		"4*ECX"					},
 	{ 4*EDX,		"4*EDX"					},
@@ -2387,7 +1589,7 @@ const struct xlat struct_user_offsets[] = {
 	{ 4*EFL,		"4*EFL"					},
 	{ 4*UESP,		"4*UESP"				},
 	{ 4*SS,			"4*SS"					},
-#   elif defined(X86_64) || defined(X32)
+#elif defined(X86_64) || defined(X32)
 	{ 8*R15,		"8*R15"					},
 	{ 8*R14,		"8*R14"					},
 	{ 8*R13,		"8*R13"					},
@@ -2409,7 +1611,7 @@ const struct xlat struct_user_offsets[] = {
 	{ 8*EFLAGS,		"8*EFL"					},
 	{ 8*RSP,		"8*RSP"					},
 	{ 8*SS,			"8*SS"					},
-#   elif defined(M68K)
+#elif defined(M68K)
 	{ 4*PT_D1,		"4*PT_D1"				},
 	{ 4*PT_D2,		"4*PT_D2"				},
 	{ 4*PT_D3,		"4*PT_D3"				},
@@ -2429,7 +1631,7 @@ const struct xlat struct_user_offsets[] = {
 	{ 4*PT_ORIG_D0,		"4*PT_ORIG_D0"				},
 	{ 4*PT_SR,		"4*PT_SR"				},
 	{ 4*PT_PC,		"4*PT_PC"				},
-#   elif defined(SH)
+#elif defined(SH)
 	{ 4*REG_REG0,		"4*REG_REG0"				},
 	{ 4*(REG_REG0+1),	"4*REG_REG1"				},
 	{ 4*(REG_REG0+2),	"4*REG_REG2"				},
@@ -2470,7 +1672,7 @@ const struct xlat struct_user_offsets[] = {
 	{ 4*(REG_FPREG0+13),	"4*REG_FPREG13"				},
 	{ 4*(REG_FPREG0+14),	"4*REG_FPREG14"				},
 	{ 4*REG_FPREG15,	"4*REG_FPREG15"				},
-#    ifdef REG_XDREG0
+# ifdef REG_XDREG0
 	{ 4*REG_XDREG0,		"4*REG_XDREG0"				},
 	{ 4*(REG_XDREG0+2),	"4*REG_XDREG2"				},
 	{ 4*(REG_XDREG0+4),	"4*REG_XDREG4"				},
@@ -2479,9 +1681,9 @@ const struct xlat struct_user_offsets[] = {
 	{ 4*(REG_XDREG0+10),	"4*REG_XDREG10"				},
 	{ 4*(REG_XDREG0+12),	"4*REG_XDREG12"				},
 	{ 4*REG_XDREG14,	"4*REG_XDREG14"				},
-#    endif
+# endif
 	{ 4*REG_FPSCR,		"4*REG_FPSCR"				},
-#   elif defined(SH64)
+#elif defined(SH64)
 	{ 0,			"PC(L)"					},
 	{ 4,			"PC(U)"					},
 	{ 8,			"SR(L)"					},
@@ -2634,7 +1836,7 @@ const struct xlat struct_user_offsets[] = {
 	   the kernel build options). */
 	{ uoff(regs),		"offsetof(struct user, regs)"		},
 	{ uoff(fpu),		"offsetof(struct user, fpu)"		},
-#   elif defined(ARM)
+#elif defined(ARM)
 	{ uoff(regs.ARM_r0),	"r0"					},
 	{ uoff(regs.ARM_r1),	"r1"					},
 	{ uoff(regs.ARM_r2),	"r2"					},
@@ -2652,7 +1854,7 @@ const struct xlat struct_user_offsets[] = {
 	{ uoff(regs.ARM_lr),	"lr"					},
 	{ uoff(regs.ARM_pc),	"pc"					},
 	{ uoff(regs.ARM_cpsr),	"cpsr"					},
-#   elif defined(AVR32)
+#elif defined(AVR32)
 	{ uoff(regs.sr),	"sr"					},
 	{ uoff(regs.pc),	"pc"					},
 	{ uoff(regs.lr),	"lr"					},
@@ -2671,7 +1873,7 @@ const struct xlat struct_user_offsets[] = {
 	{ uoff(regs.r1),	"r1"					},
 	{ uoff(regs.r0),	"r0"					},
 	{ uoff(regs.r12_orig),	"orig_r12"				},
-#   elif defined(MIPS)
+#elif defined(MIPS)
 	{ 0,			"r0"					},
 	{ 1,			"r1"					},
 	{ 2,			"r2"					},
@@ -2743,7 +1945,7 @@ const struct xlat struct_user_offsets[] = {
 	{ 68,			"mmlo"					},
 	{ 69,			"fpcsr"					},
 	{ 70,			"fpeir"					},
-#   elif defined(TILE)
+#elif defined(TILE)
 	{ PTREGS_OFFSET_REG(0),  "r0"  },
 	{ PTREGS_OFFSET_REG(1),  "r1"  },
 	{ PTREGS_OFFSET_REG(2),  "r2"  },
@@ -2805,8 +2007,8 @@ const struct xlat struct_user_offsets[] = {
 	{ PTREGS_OFFSET_FAULTNUM, "faultnum" },
 	{ PTREGS_OFFSET_ORIG_R0, "orig_r0" },
 	{ PTREGS_OFFSET_FLAGS, "flags" },
-#   endif
-#   ifdef CRISV10
+#endif
+#ifdef CRISV10
 	{ 4*PT_FRAMETYPE, "4*PT_FRAMETYPE" },
 	{ 4*PT_ORIG_R10, "4*PT_ORIG_R10" },
 	{ 4*PT_R13, "4*PT_R13" },
@@ -2831,8 +2033,8 @@ const struct xlat struct_user_offsets[] = {
 	{ 4*PT_CSRADDR, "4*PT_CSRADDR" },
 	{ 4*PT_CSRDATA, "4*PT_CSRDATA" },
 	{ 4*PT_USP, "4*PT_USP" },
-#   endif
-#   ifdef CRISV32
+#endif
+#ifdef CRISV32
 	{ 4*PT_ORIG_R10, "4*PT_ORIG_R10" },
 	{ 4*PT_R0, "4*PT_R0" },
 	{ 4*PT_R1, "4*PT_R1" },
@@ -2874,8 +2076,8 @@ const struct xlat struct_user_offsets[] = {
 	{ 4*PT_BP+48, "4*PT_BP+48" },
 	{ 4*PT_BP+52, "4*PT_BP+52" },
 	{ 4*PT_BP+56, "4*PT_BP+56" },
-#   endif
-#   ifdef MICROBLAZE
+#endif
+#ifdef MICROBLAZE
 	{ PT_GPR(0),		"r0"					},
 	{ PT_GPR(1),		"r1"					},
 	{ PT_GPR(2),		"r2"					},
@@ -2914,104 +2116,54 @@ const struct xlat struct_user_offsets[] = {
 	{ PT_ESR,		"resr",					},
 	{ PT_FSR,		"rfsr",					},
 	{ PT_KERNEL_MODE,	"kernel_mode",				},
-#   endif
+#endif
 
-#   if !defined(SPARC) && !defined(HPPA) && !defined(POWERPC) \
+#if !defined(SPARC) && !defined(HPPA) && !defined(POWERPC) \
 		&& !defined(ALPHA) && !defined(IA64) \
 		&& !defined(CRISV10) && !defined(CRISV32) && !defined(MICROBLAZE)
-#    if !defined(S390) && !defined(S390X) && !defined(MIPS) && !defined(SPARC64) && !defined(AVR32) && !defined(BFIN) && !defined(TILE)
+# if !defined(S390) && !defined(S390X) && !defined(MIPS) && !defined(SPARC64) && !defined(AVR32) && !defined(BFIN) && !defined(TILE)
 	{ uoff(u_fpvalid),	"offsetof(struct user, u_fpvalid)"	},
-#    endif
-#    if defined(I386) || defined(X86_64) || defined(X32)
+# endif
+# if defined(I386) || defined(X86_64) || defined(X32)
 	{ uoff(i387),		"offsetof(struct user, i387)"		},
-#    endif
-#    if defined(M68K)
+# endif
+# if defined(M68K)
 	{ uoff(m68kfp),		"offsetof(struct user, m68kfp)"		},
-#    endif
+# endif
 	{ uoff(u_tsize),	"offsetof(struct user, u_tsize)"	},
 	{ uoff(u_dsize),	"offsetof(struct user, u_dsize)"	},
 	{ uoff(u_ssize),	"offsetof(struct user, u_ssize)"	},
-#    if !defined(SPARC64)
+# if !defined(SPARC64)
 	{ uoff(start_code),	"offsetof(struct user, start_code)"	},
-#    endif
-#    if defined(AVR32) || defined(SH64)
+# endif
+# if defined(AVR32) || defined(SH64)
 	{ uoff(start_data),	"offsetof(struct user, start_data)"	},
-#    endif
-#    if !defined(SPARC64)
+# endif
+# if !defined(SPARC64)
 	{ uoff(start_stack),	"offsetof(struct user, start_stack)"	},
-#    endif
+# endif
 	{ uoff(signal),		"offsetof(struct user, signal)"		},
-#    if !defined(AVR32) && !defined(S390) && !defined(S390X) && !defined(MIPS) && !defined(SH) && !defined(SH64) && !defined(SPARC64) && !defined(TILE)
+# if !defined(AVR32) && !defined(S390) && !defined(S390X) && !defined(MIPS) && !defined(SH) && !defined(SH64) && !defined(SPARC64) && !defined(TILE)
 	{ uoff(reserved),	"offsetof(struct user, reserved)"	},
-#    endif
-#    if !defined(SPARC64)
+# endif
+# if !defined(SPARC64)
 	{ uoff(u_ar0),		"offsetof(struct user, u_ar0)"		},
-#    endif
-#    if !defined(ARM) && !defined(AVR32) && !defined(MIPS) && !defined(S390) && !defined(S390X) && !defined(SPARC64) && !defined(BFIN) && !defined(TILE)
+# endif
+# if !defined(ARM) && !defined(AVR32) && !defined(MIPS) && !defined(S390) && !defined(S390X) && !defined(SPARC64) && !defined(BFIN) && !defined(TILE)
 	{ uoff(u_fpstate),	"offsetof(struct user, u_fpstate)"	},
-#    endif
+# endif
 	{ uoff(magic),		"offsetof(struct user, magic)"		},
 	{ uoff(u_comm),		"offsetof(struct user, u_comm)"		},
-#    if defined(I386) || defined(X86_64) || defined(X32)
+# if defined(I386) || defined(X86_64) || defined(X32)
 	{ uoff(u_debugreg),	"offsetof(struct user, u_debugreg)"	},
-#    endif
-#   endif /* !defined(many arches) */
+# endif
+#endif /* !defined(many arches) */
 
-#  endif /* LINUX */
-
-#  ifdef SUNOS4
-	{ uoff(u_pcb),		"offsetof(struct user, u_pcb)"		},
-	{ uoff(u_procp),	"offsetof(struct user, u_procp)"	},
-	{ uoff(u_ar0),		"offsetof(struct user, u_ar0)"		},
-	{ uoff(u_comm[0]),	"offsetof(struct user, u_comm[0])"	},
-	{ uoff(u_arg[0]),	"offsetof(struct user, u_arg[0])"	},
-	{ uoff(u_ap),		"offsetof(struct user, u_ap)"		},
-	{ uoff(u_qsave),	"offsetof(struct user, u_qsave)"	},
-	{ uoff(u_rval1),	"offsetof(struct user, u_rval1)"	},
-	{ uoff(u_rval2),	"offsetof(struct user, u_rval2)"	},
-	{ uoff(u_error),	"offsetof(struct user, u_error)"	},
-	{ uoff(u_eosys),	"offsetof(struct user, u_eosys)"	},
-	{ uoff(u_ssave),	"offsetof(struct user, u_ssave)"	},
-	{ uoff(u_signal[0]),	"offsetof(struct user, u_signal)"	},
-	{ uoff(u_sigmask[0]),	"offsetof(struct user, u_sigmask)"	},
-	{ uoff(u_sigonstack),	"offsetof(struct user, u_sigonstack)"	},
-	{ uoff(u_sigintr),	"offsetof(struct user, u_sigintr)"	},
-	{ uoff(u_sigreset),	"offsetof(struct user, u_sigreset)"	},
-	{ uoff(u_oldmask),	"offsetof(struct user, u_oldmask)"	},
-	{ uoff(u_code),		"offsetof(struct user, u_code)"		},
-	{ uoff(u_addr),		"offsetof(struct user, u_addr)"		},
-	{ uoff(u_sigstack),	"offsetof(struct user, u_sigstack)"	},
-	{ uoff(u_ofile),	"offsetof(struct user, u_ofile)"	},
-	{ uoff(u_pofile),	"offsetof(struct user, u_pofile)"	},
-	{ uoff(u_ofile_arr[0]),	"offsetof(struct user, u_ofile_arr[0])"	},
-	{ uoff(u_pofile_arr[0]),"offsetof(struct user, u_pofile_arr[0])"},
-	{ uoff(u_lastfile),	"offsetof(struct user, u_lastfile)"	},
-	{ uoff(u_cwd),		"offsetof(struct user, u_cwd)"		},
-	{ uoff(u_cdir),		"offsetof(struct user, u_cdir)"		},
-	{ uoff(u_rdir),		"offsetof(struct user, u_rdir)"		},
-	{ uoff(u_cmask),	"offsetof(struct user, u_cmask)"	},
-	{ uoff(u_ru),		"offsetof(struct user, u_ru)"		},
-	{ uoff(u_cru),		"offsetof(struct user, u_cru)"		},
-	{ uoff(u_timer[0]),	"offsetof(struct user, u_timer[0])"	},
-	{ uoff(u_XXX[0]),	"offsetof(struct user, u_XXX[0])"	},
-	{ uoff(u_ioch),		"offsetof(struct user, u_ioch)"		},
-	{ uoff(u_start),	"offsetof(struct user, u_start)"	},
-	{ uoff(u_acflag),	"offsetof(struct user, u_acflag)"	},
-	{ uoff(u_prof.pr_base),	"offsetof(struct user, u_prof.pr_base)"	},
-	{ uoff(u_prof.pr_size),	"offsetof(struct user, u_prof.pr_size)"	},
-	{ uoff(u_prof.pr_off),	"offsetof(struct user, u_prof.pr_off)"	},
-	{ uoff(u_prof.pr_scale),"offsetof(struct user, u_prof.pr_scale)"},
-	{ uoff(u_rlimit[0]),	"offsetof(struct user, u_rlimit)"	},
-	{ uoff(u_exdata.Ux_A),	"offsetof(struct user, u_exdata.Ux_A)"	},
-	{ uoff(u_exdata.ux_shell[0]),"offsetof(struct user, u_exdata.ux_shell[0])"},
-	{ uoff(u_lofault),	"offsetof(struct user, u_lofault)"	},
-#  endif /* SUNOS4 */
-#  ifndef HPPA
+#ifndef HPPA
 	{ sizeof(struct user),	"sizeof(struct user)"			},
-#  endif
+#endif
 	{ 0,			NULL					},
 };
-# endif /* !FREEBSD */
 
 int
 sys_ptrace(struct tcb *tcp)
@@ -3020,16 +2172,9 @@ sys_ptrace(struct tcb *tcp)
 	long addr;
 
 	if (entering(tcp)) {
-		printxval(ptrace_cmds, tcp->u_arg[0],
-# ifndef FREEBSD
-			  "PTRACE_???"
-# else
-			  "PT_???"
-# endif
-			);
+		printxval(ptrace_cmds, tcp->u_arg[0], "PTRACE_???");
 		tprintf(", %lu, ", tcp->u_arg[1]);
 		addr = tcp->u_arg[2];
-# ifndef FREEBSD
 		if (tcp->u_arg[0] == PTRACE_PEEKUSER
 			|| tcp->u_arg[0] == PTRACE_POKEUSER) {
 			for (x = struct_user_offsets; x->str; x++) {
@@ -3046,28 +2191,26 @@ sys_ptrace(struct tcb *tcp)
 				tprintf("%s, ", x->str);
 		}
 		else
-# endif
 			tprintf("%#lx, ", tcp->u_arg[2]);
-# ifdef LINUX
 		switch (tcp->u_arg[0]) {
-#  ifndef IA64
+#ifndef IA64
 		case PTRACE_PEEKDATA:
 		case PTRACE_PEEKTEXT:
 		case PTRACE_PEEKUSER:
 			break;
-#  endif
+#endif
 		case PTRACE_CONT:
 		case PTRACE_SINGLESTEP:
 		case PTRACE_SYSCALL:
 		case PTRACE_DETACH:
 			printsignal(tcp->u_arg[3]);
 			break;
-#  ifdef PTRACE_SETOPTIONS
+#ifdef PTRACE_SETOPTIONS
 		case PTRACE_SETOPTIONS:
 			printflags(ptrace_setoptions_flags, tcp->u_arg[3], "PTRACE_O_???");
 			break;
-#  endif
-#  ifdef PTRACE_SETSIGINFO
+#endif
+#ifdef PTRACE_SETSIGINFO
 		case PTRACE_SETSIGINFO: {
 			siginfo_t si;
 			if (!tcp->u_arg[3])
@@ -3080,12 +2223,12 @@ sys_ptrace(struct tcb *tcp)
 				printsiginfo(&si, verbose(tcp));
 			break;
 		}
-#  endif
-#  ifdef PTRACE_GETSIGINFO
+#endif
+#ifdef PTRACE_GETSIGINFO
 		case PTRACE_GETSIGINFO:
 			/* Don't print anything, do it at syscall return. */
 			break;
-#  endif
+#endif
 		default:
 			tprintf("%#lx", tcp->u_arg[3]);
 			break;
@@ -3095,13 +2238,13 @@ sys_ptrace(struct tcb *tcp)
 		case PTRACE_PEEKDATA:
 		case PTRACE_PEEKTEXT:
 		case PTRACE_PEEKUSER:
-#  ifdef IA64
+#ifdef IA64
 			return RVAL_HEX;
-#  else
+#else
 			printnum(tcp, tcp->u_arg[3], "%#lx");
 			break;
-#  endif
-#  ifdef PTRACE_GETSIGINFO
+#endif
+#ifdef PTRACE_GETSIGINFO
 		case PTRACE_GETSIGINFO: {
 			siginfo_t si;
 			if (!tcp->u_arg[3])
@@ -3114,66 +2257,41 @@ sys_ptrace(struct tcb *tcp)
 				printsiginfo(&si, verbose(tcp));
 			break;
 		}
-#  endif
+#endif
 		}
 	}
-# endif /* LINUX */
-# ifdef SUNOS4
-		if (tcp->u_arg[0] == PTRACE_WRITEDATA ||
-			tcp->u_arg[0] == PTRACE_WRITETEXT) {
-			tprintf("%lu, ", tcp->u_arg[3]);
-			printstr(tcp, tcp->u_arg[4], tcp->u_arg[3]);
-		} else if (tcp->u_arg[0] != PTRACE_READDATA &&
-				tcp->u_arg[0] != PTRACE_READTEXT) {
-			tprintf("%#lx", tcp->u_arg[3]);
-		}
-	} else {
-		if (tcp->u_arg[0] == PTRACE_READDATA ||
-			tcp->u_arg[0] == PTRACE_READTEXT) {
-			tprintf("%lu, ", tcp->u_arg[3]);
-			printstr(tcp, tcp->u_arg[4], tcp->u_arg[3]);
-		}
-	}
-# endif /* SUNOS4 */
-# ifdef FREEBSD
-		tprintf("%lu", tcp->u_arg[3]);
-	}
-# endif /* FREEBSD */
 	return 0;
 }
 
-#endif /* !SVR4 */
-
-#ifdef LINUX
-# ifndef FUTEX_CMP_REQUEUE
-#  define FUTEX_CMP_REQUEUE 4
-# endif
-# ifndef FUTEX_WAKE_OP
-#  define FUTEX_WAKE_OP 5
-# endif
-# ifndef FUTEX_LOCK_PI
-#  define FUTEX_LOCK_PI 6
-#  define FUTEX_UNLOCK_PI 7
-#  define FUTEX_TRYLOCK_PI 8
-# endif
-# ifndef FUTEX_WAIT_BITSET
-#  define FUTEX_WAIT_BITSET 9
-# endif
-# ifndef FUTEX_WAKE_BITSET
-#  define FUTEX_WAKE_BITSET 10
-# endif
-# ifndef FUTEX_WAIT_REQUEUE_PI
-#  define FUTEX_WAIT_REQUEUE_PI 11
-# endif
-# ifndef FUTEX_CMP_REQUEUE_PI
-#  define FUTEX_CMP_REQUEUE_PI 12
-# endif
-# ifndef FUTEX_PRIVATE_FLAG
-#  define FUTEX_PRIVATE_FLAG 128
-# endif
-# ifndef FUTEX_CLOCK_REALTIME
-#  define FUTEX_CLOCK_REALTIME 256
-# endif
+#ifndef FUTEX_CMP_REQUEUE
+# define FUTEX_CMP_REQUEUE 4
+#endif
+#ifndef FUTEX_WAKE_OP
+# define FUTEX_WAKE_OP 5
+#endif
+#ifndef FUTEX_LOCK_PI
+# define FUTEX_LOCK_PI 6
+# define FUTEX_UNLOCK_PI 7
+# define FUTEX_TRYLOCK_PI 8
+#endif
+#ifndef FUTEX_WAIT_BITSET
+# define FUTEX_WAIT_BITSET 9
+#endif
+#ifndef FUTEX_WAKE_BITSET
+# define FUTEX_WAKE_BITSET 10
+#endif
+#ifndef FUTEX_WAIT_REQUEUE_PI
+# define FUTEX_WAIT_REQUEUE_PI 11
+#endif
+#ifndef FUTEX_CMP_REQUEUE_PI
+# define FUTEX_CMP_REQUEUE_PI 12
+#endif
+#ifndef FUTEX_PRIVATE_FLAG
+# define FUTEX_PRIVATE_FLAG 128
+#endif
+#ifndef FUTEX_CLOCK_REALTIME
+# define FUTEX_CLOCK_REALTIME 256
+#endif
 static const struct xlat futexops[] = {
 	{ FUTEX_WAIT,					"FUTEX_WAIT" },
 	{ FUTEX_WAKE,					"FUTEX_WAKE" },
@@ -3207,19 +2325,19 @@ static const struct xlat futexops[] = {
 	{ FUTEX_WAIT_REQUEUE_PI|FUTEX_PRIVATE_FLAG|FUTEX_CLOCK_REALTIME,	"FUTEX_WAIT_REQUEUE_PI_PRIVATE|FUTEX_CLOCK_REALTIME" },
 	{ 0,						NULL }
 };
-# ifndef FUTEX_OP_SET
-#  define FUTEX_OP_SET		0
-#  define FUTEX_OP_ADD		1
-#  define FUTEX_OP_OR		2
-#  define FUTEX_OP_ANDN		3
-#  define FUTEX_OP_XOR		4
-#  define FUTEX_OP_CMP_EQ	0
-#  define FUTEX_OP_CMP_NE	1
-#  define FUTEX_OP_CMP_LT	2
-#  define FUTEX_OP_CMP_LE	3
-#  define FUTEX_OP_CMP_GT	4
-#  define FUTEX_OP_CMP_GE	5
-# endif
+#ifndef FUTEX_OP_SET
+# define FUTEX_OP_SET		0
+# define FUTEX_OP_ADD		1
+# define FUTEX_OP_OR		2
+# define FUTEX_OP_ANDN		3
+# define FUTEX_OP_XOR		4
+# define FUTEX_OP_CMP_EQ	0
+# define FUTEX_OP_CMP_NE	1
+# define FUTEX_OP_CMP_LT	2
+# define FUTEX_OP_CMP_LE	3
+# define FUTEX_OP_CMP_GT	4
+# define FUTEX_OP_CMP_GE	5
+#endif
 static const struct xlat futexwakeops[] = {
 	{ FUTEX_OP_SET,		"FUTEX_OP_SET" },
 	{ FUTEX_OP_ADD,		"FUTEX_OP_ADD" },
@@ -3334,6 +2452,34 @@ sys_sched_getaffinity(struct tcb *tcp)
 	return 0;
 }
 
+int
+sys_get_robust_list(struct tcb *tcp)
+{
+	if (entering(tcp)) {
+		tprintf("%ld, ", (long) (pid_t) tcp->u_arg[0]);
+	} else {
+		void *addr;
+		size_t len;
+
+		if (syserror(tcp) ||
+		    !tcp->u_arg[1] ||
+		    umove(tcp, tcp->u_arg[1], &addr) < 0) {
+			tprintf("%#lx, ", tcp->u_arg[1]);
+		} else {
+			tprintf("[%p], ", addr);
+		}
+
+		if (syserror(tcp) ||
+		    !tcp->u_arg[2] ||
+		    umove(tcp, tcp->u_arg[2], &len) < 0) {
+			tprintf("%#lx", tcp->u_arg[2]);
+		} else {
+			tprintf("[%lu]", (unsigned long) len);
+		}
+	}
+	return 0;
+}
+
 static const struct xlat schedulers[] = {
 	{ SCHED_OTHER,	"SCHED_OTHER" },
 	{ SCHED_RR,	"SCHED_RR" },
@@ -3346,7 +2492,7 @@ sys_sched_getscheduler(struct tcb *tcp)
 {
 	if (entering(tcp)) {
 		tprintf("%d", (int) tcp->u_arg[0]);
-	} else if (! syserror(tcp)) {
+	} else if (!syserror(tcp)) {
 		tcp->auxstr = xlookup(schedulers, tcp->u_rval);
 		if (tcp->auxstr != NULL)
 			return RVAL_STR;
@@ -3406,7 +2552,21 @@ sys_sched_get_priority_min(struct tcb *tcp)
 	return 0;
 }
 
-# if defined X86_64 || defined X32
+int
+sys_sched_rr_get_interval(struct tcb *tcp)
+{
+	if (entering(tcp)) {
+		tprintf("%ld, ", (long) (pid_t) tcp->u_arg[0]);
+	} else {
+		if (syserror(tcp))
+			tprintf("%#lx", tcp->u_arg[1]);
+		else
+			print_timespec(tcp, tcp->u_arg[1]);
+	}
+	return 0;
+}
+
+#if defined X86_64 || defined X32
 # include <asm/prctl.h>
 
 static const struct xlat archvals[] = {
@@ -3440,8 +2600,7 @@ sys_arch_prctl(struct tcb *tcp)
 	}
 	return 0;
 }
-# endif /* X86_64 || X32 */
-
+#endif /* X86_64 || X32 */
 
 int
 sys_getcpu(struct tcb *tcp)
@@ -3472,23 +2631,48 @@ sys_process_vm_readv(struct tcb *tcp)
 		/* arg 1: pid */
 		tprintf("%ld, ", tcp->u_arg[0]);
 	} else {
-		/* args 2,3: local iov,cnt */
+		/* arg 2: local iov */
 		if (syserror(tcp)) {
-			tprintf("%#lx, %lu",
-					tcp->u_arg[1], tcp->u_arg[2]);
+			tprintf("%#lx", tcp->u_arg[1]);
 		} else {
 			tprint_iov(tcp, tcp->u_arg[2], tcp->u_arg[1], 1);
 		}
-		tprints(", ");
-		/* args 4,5: remote iov,cnt */
+		/* arg 3: local iovcnt */
+		tprintf(", %lu, ", tcp->u_arg[2]);
+		/* arg 4: remote iov */
 		if (syserror(tcp)) {
-			tprintf("%#lx, %lu", tcp->u_arg[3], tcp->u_arg[4]);
+			tprintf("%#lx", tcp->u_arg[3]);
 		} else {
 			tprint_iov(tcp, tcp->u_arg[4], tcp->u_arg[3], 0);
 		}
+		/* arg 5: remote iovcnt */
 		/* arg 6: flags */
-		tprintf(", %lu", tcp->u_arg[5]);
+		tprintf(", %lu, %lu", tcp->u_arg[4], tcp->u_arg[5]);
 	}
 	return 0;
 }
-#endif /* LINUX */
+
+int
+sys_process_vm_writev(struct tcb *tcp)
+{
+	if (entering(tcp)) {
+		/* arg 1: pid */
+		tprintf("%ld, ", tcp->u_arg[0]);
+		/* arg 2: local iov */
+		if (syserror(tcp))
+			tprintf("%#lx", tcp->u_arg[1]);
+		else
+			tprint_iov(tcp, tcp->u_arg[2], tcp->u_arg[1], 1);
+		/* arg 3: local iovcnt */
+		tprintf(", %lu, ", tcp->u_arg[2]);
+		/* arg 4: remote iov */
+		if (syserror(tcp))
+			tprintf("%#lx", tcp->u_arg[3]);
+		else
+			tprint_iov(tcp, tcp->u_arg[4], tcp->u_arg[3], 0);
+		/* arg 5: remote iovcnt */
+		/* arg 6: flags */
+		tprintf(", %lu, %lu", tcp->u_arg[4], tcp->u_arg[5]);
+	}
+	return 0;
+}

@@ -26,18 +26,12 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
-#if defined(LINUX) || defined(SUNOS4) || defined(FREEBSD)
-
-# ifdef HAVE_MQUEUE_H
-#  include <mqueue.h>
-# endif
-
+#ifdef HAVE_MQUEUE_H
+# include <mqueue.h>
+#endif
 #include <fcntl.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -63,7 +57,7 @@
 #define SEM_INFO 19
 #endif
 
-#if defined LINUX && !defined IPC_64
+#if !defined IPC_64
 # define IPC_64 0x100
 #endif
 
@@ -73,11 +67,9 @@ static const struct xlat msgctl_flags[] = {
 	{ IPC_RMID,	"IPC_RMID"	},
 	{ IPC_SET,	"IPC_SET"	},
 	{ IPC_STAT,	"IPC_STAT"	},
-#ifdef LINUX
 	{ IPC_INFO,	"IPC_INFO"	},
 	{ MSG_STAT,	"MSG_STAT"	},
 	{ MSG_INFO,	"MSG_INFO"	},
-#endif /* LINUX */
 	{ 0,		NULL		},
 };
 
@@ -85,11 +77,9 @@ static const struct xlat semctl_flags[] = {
 	{ IPC_RMID,	"IPC_RMID"	},
 	{ IPC_SET,	"IPC_SET"	},
 	{ IPC_STAT,	"IPC_STAT"	},
-#ifdef LINUX
 	{ IPC_INFO,	"IPC_INFO"	},
 	{ SEM_STAT,	"SEM_STAT"	},
 	{ SEM_INFO,	"SEM_INFO"	},
-#endif /* LINUX */
 	{ GETPID,	"GETPID"	},
 	{ GETVAL,	"GETVAL"	},
 	{ GETALL,	"GETALL"	},
@@ -104,11 +94,9 @@ static const struct xlat shmctl_flags[] = {
 	{ IPC_RMID,	"IPC_RMID"	},
 	{ IPC_SET,	"IPC_SET"	},
 	{ IPC_STAT,	"IPC_STAT"	},
-#ifdef LINUX
 	{ IPC_INFO,	"IPC_INFO"	},
 	{ SHM_STAT,	"SHM_STAT"	},
 	{ SHM_INFO,	"SHM_INFO"	},
-#endif /* LINUX */
 #ifdef SHM_LOCK
 	{ SHM_LOCK,	"SHM_LOCK"	},
 #endif
@@ -135,9 +123,7 @@ static const struct xlat shm_resource_flags[] = {
 };
 
 static const struct xlat shm_flags[] = {
-#ifdef LINUX
 	{ SHM_REMAP,	"SHM_REMAP"	},
-#endif /* LINUX */
 	{ SHM_RDONLY,	"SHM_RDONLY"	},
 	{ SHM_RND,	"SHM_RND"	},
 	{ 0,		NULL		},
@@ -145,9 +131,7 @@ static const struct xlat shm_flags[] = {
 
 static const struct xlat msg_flags[] = {
 	{ MSG_NOERROR,	"MSG_NOERROR"	},
-#ifdef LINUX
 	{ MSG_EXCEPT,	"MSG_EXCEPT"	},
-#endif /* LINUX */
 	{ IPC_NOWAIT,	"IPC_NOWAIT"	},
 	{ 0,		NULL		},
 };
@@ -184,18 +168,16 @@ int sys_msgget(struct tcb *tcp)
 static int
 indirect_ipccall(struct tcb *tcp)
 {
-#ifdef LINUX
 #ifdef X86_64
 	return current_personality == 1;
 #endif
 #if defined IA64
 	return tcp->scno < 1024; /* ia32 emulation syscalls are low */
 #endif
-#if !defined MIPS && !defined HPPA
-	return 1;
-#endif
-#endif	/* LINUX */
+#if defined(ALPHA) || defined(MIPS) || defined(HPPA) || defined(__ARM_EABI__)
 	return 0;
+#endif
+	return 1;
 }
 
 int sys_msgctl(struct tcb *tcp)
@@ -338,7 +320,6 @@ int sys_semop(struct tcb *tcp)
 	return 0;
 }
 
-#ifdef LINUX
 int sys_semtimedop(struct tcb *tcp)
 {
 	if (entering(tcp)) {
@@ -359,7 +340,6 @@ int sys_semtimedop(struct tcb *tcp)
 	}
 	return 0;
 }
-#endif
 
 int sys_semget(struct tcb *tcp)
 {
@@ -420,10 +400,6 @@ int sys_shmctl(struct tcb *tcp)
 
 int sys_shmat(struct tcb *tcp)
 {
-#ifdef LINUX
-	unsigned long raddr;
-#endif /* LINUX */
-
 	if (exiting(tcp)) {
 		tprintf("%lu", tcp->u_arg[0]);
 		if (indirect_ipccall(tcp)) {
@@ -437,12 +413,12 @@ int sys_shmat(struct tcb *tcp)
 		}
 		if (syserror(tcp))
 			return 0;
-/* HPPA does not use an IPC multiplexer on Linux.  */
-#if defined(LINUX) && !defined(HPPA)
-		if (umove(tcp, tcp->u_arg[2], &raddr) < 0)
-			return RVAL_NONE;
-		tcp->u_rval = raddr;
-#endif /* LINUX */
+		if (indirect_ipccall(tcp)) {
+			unsigned long raddr;
+			if (umove(tcp, tcp->u_arg[2], &raddr) < 0)
+				return RVAL_NONE;
+			tcp->u_rval = raddr;
+		}
 		return RVAL_HEX;
 	}
 	return 0;
@@ -460,9 +436,6 @@ int sys_shmdt(struct tcb *tcp)
 	return 0;
 }
 
-#endif /* defined(LINUX) || defined(SUNOS4) || defined(FREEBSD) */
-
-#ifdef LINUX
 int
 sys_mq_open(struct tcb *tcp)
 {
@@ -559,4 +532,9 @@ sys_mq_getsetattr(struct tcb *tcp)
 		printmqattr(tcp, tcp->u_arg[2]);
 	return 0;
 }
-#endif
+
+int
+sys_ipc(struct tcb *tcp)
+{
+	return printargs(tcp);
+}

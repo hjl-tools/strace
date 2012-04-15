@@ -144,7 +144,7 @@
 	{ 1,	TF,	sys_swapoff,		"swapoff"	}, /* 115 */
 	{ 1,	0,	sys_sysinfo,		"sysinfo"	}, /* 116 */
 	{ 6,	TI,	sys_ipc,		"ipc"		}, /* 117 */
-	{ 1,	0,	sys_fsync,		"fsync"		}, /* 118 */
+	{ 1,	TD,	sys_fsync,		"fsync"		}, /* 118 */
 	{ 0,	TS,	sys_sigreturn,		"sigreturn"	}, /* 119 */
 	{ 5,	TP,	sys_clone,		"clone"		}, /* 120 */
 	{ 2,	0,	sys_setdomainname,	"setdomainname"	}, /* 121 */
@@ -248,8 +248,8 @@
 	{ 3,	0,	sys_madvise,		"madvise"	}, /* 219 */
 	{ 3,	TD,	sys_getdents64,		"getdents64"	}, /* 220 */
 	{ 3,	0,	sys_fcntl,		"fcntl64"	}, /* 221 */
-	{ 4,	0,	printargs,		"SYS_222"	}, /* 222 */
-	{ 4,	0,	printargs,		"SYS_223"	}, /* 223 */
+	{ 4,	0,	NULL,			NULL		}, /* 222 */
+	{ 4,	0,	NULL,			NULL		}, /* 223 */
 	{ 0,	0,	sys_gettid,		"gettid"	}, /* 224 */
 	{ 4,	0,	sys_readahead,		"readahead"	}, /* 225 */
 	{ 5,	TF,	sys_setxattr,		"setxattr"	}, /* 226 */
@@ -277,7 +277,7 @@
 	{ 3,	0,	sys_io_submit,		"io_submit"	}, /* 248 */
 	{ 3,	0,	sys_io_cancel,		"io_cancel"	}, /* 249 */
 	{ 5,	TD,	sys_fadvise64,		"fadvise64"	}, /* 250 */
-	{ 0,	0,	printargs,		"SYS_251"	}, /* 251 */
+	{ 0,	0,	NULL,			NULL		}, /* 251 */
 	{ 1,	TP,	sys_exit,		"exit_group"	}, /* 252 */
 	{ 4,	0,	sys_lookup_dcookie,	"lookup_dcookie"}, /* 253 */
 	{ 1,	TD,	sys_epoll_create,	"epoll_create"	}, /* 254 */
@@ -311,7 +311,7 @@
 	{ 3,	0,	sys_mq_getsetattr,	"mq_getsetattr"	}, /* 282 */
 	{ 4,	0,	sys_kexec_load,		"kexec_load"	}, /* 283 */
 	{ 5,	TP,	sys_waitid,		"waitid"	}, /* 284 */
-	{ 5,	0,	printargs,		"SYS_285"	}, /* 285 */
+	{ 5,	0,	NULL,			NULL		}, /* 285 */
 	{ 5,	0,	sys_add_key,		"add_key"	}, /* 286 */
 	{ 4,	0,	sys_request_key,	"request_key"	}, /* 287 */
 	{ 5,	0,	sys_keyctl,		"keyctl"	}, /* 288 */
@@ -332,9 +332,6 @@
 	{ 5,	TD|TF,	sys_linkat,		"linkat"	}, /* 303 */
 	{ 3,	TD|TF,	sys_symlinkat,		"symlinkat"	}, /* 304 */
 	{ 4,	TD|TF,	sys_readlinkat,		"readlinkat"	}, /* 305 */
-
-
-
 	{ 3,	TD|TF,	sys_fchmodat,		"fchmodat"	}, /* 306 */
 	{ 3,	TD|TF,	sys_faccessat,		"faccessat"	}, /* 307 */
 	{ 6,	TD,	sys_pselect6,		"pselect6"	}, /* 308 */
@@ -405,3 +402,6 @@
 	{ 2,	0,	sys_clock_adjtime,	"clock_adjtime"	}, /* 373 */
 	{ 1,	TD,	sys_syncfs,		"syncfs"	}, /* 374 */
 	{ 2,	TD,	sys_setns,		"setns"		}, /* 375 */
+	{ 4,	TN,	sys_sendmmsg,		"sendmmsg"	}, /* 376 */
+	{ 6,	0,	sys_process_vm_readv,	"process_vm_readv"	}, /* 377 */
+	{ 6,	0,	sys_process_vm_writev,	"process_vm_writev"	}, /* 378 */

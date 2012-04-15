@@ -28,24 +28,18 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
-#ifdef LINUX
 #include <asm/mman.h>
-#endif
 #include <sys/mman.h>
-
-#if defined(LINUX) && defined(I386)
+#if defined(I386)
 # include <asm/ldt.h>
 # ifdef HAVE_STRUCT_USER_DESC
 #  define modify_ldt_ldt_s user_desc
 # endif
 #endif
-#if defined(LINUX) && defined(SH64)
+#if defined(SH64)
 # include <asm/page.h>	    /* for PAGE_SHIFT */
 #endif
 
@@ -53,7 +47,7 @@
 /*
  * Ugly hacks for systems that have a long long off_t
  */
-#define sys_mmap64	sys_mmap
+# define sys_mmap64	sys_mmap
 #endif
 
 int
@@ -62,23 +56,8 @@ sys_brk(struct tcb *tcp)
 	if (entering(tcp)) {
 		tprintf("%#lx", tcp->u_arg[0]);
 	}
-#ifdef LINUX
-	return RVAL_HEX;
-#else
-	return 0;
-#endif
-}
-
-#if defined(FREEBSD) || defined(SUNOS4)
-int
-sys_sbrk(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		tprintf("%lu", tcp->u_arg[0]);
-	}
 	return RVAL_HEX;
 }
-#endif /* FREEBSD || SUNOS4 */
 
 static const struct xlat mmap_prot[] = {
 	{ PROT_NONE,	"PROT_NONE",	},
@@ -162,29 +141,29 @@ static const struct xlat mmap_flags[] = {
 	{ MAP_EXECUTABLE,"MAP_EXECUTABLE"},
 #endif
 #ifdef MAP_INHERIT
-	{ MAP_INHERIT,"MAP_INHERIT"	},
+	{ MAP_INHERIT,	"MAP_INHERIT"	},
 #endif
 #ifdef MAP_FILE
-	{ MAP_FILE,"MAP_FILE"},
+	{ MAP_FILE,	"MAP_FILE"	},
 #endif
 #ifdef MAP_LOCKED
-	{ MAP_LOCKED,"MAP_LOCKED"},
+	{ MAP_LOCKED,	"MAP_LOCKED"	},
 #endif
 	/* FreeBSD ones */
-#ifdef MAP_ANON
-	{ MAP_ANON,		"MAP_ANON"	},
+#if defined(MAP_ANON) && (!defined(MAP_ANONYMOUS) || MAP_ANON != MAP_ANONYMOUS)
+	{ MAP_ANON,	"MAP_ANON"	},
 #endif
 #ifdef MAP_HASSEMAPHORE
-	{ MAP_HASSEMAPHORE,	"MAP_HASSEMAPHORE"	},
+	{ MAP_HASSEMAPHORE,"MAP_HASSEMAPHORE"},
 #endif
 #ifdef MAP_STACK
-	{ MAP_STACK,		"MAP_STACK"	},
+	{ MAP_STACK,	"MAP_STACK"	},
 #endif
 #ifdef MAP_NOSYNC
-	{ MAP_NOSYNC,		"MAP_NOSYNC"	},
+	{ MAP_NOSYNC,	"MAP_NOSYNC"	},
 #endif
 #ifdef MAP_NOCORE
-	{ MAP_NOCORE,		"MAP_NOCORE"	},
+	{ MAP_NOCORE,	"MAP_NOCORE"	},
 #endif
 #ifdef TILE
 	{ MAP_CACHE_NO_LOCAL, "MAP_CACHE_NO_LOCAL" },
@@ -262,7 +241,6 @@ print_mmap(struct tcb *tcp, long *u_arg, long long offset)
 	return RVAL_HEX;
 }
 
-#ifdef LINUX
 int sys_old_mmap(struct tcb *tcp)
 {
 #if defined(IA64)
@@ -305,7 +283,6 @@ int sys_old_mmap(struct tcb *tcp)
 
 	return print_mmap(tcp, u_arg, u_arg[5]);
 }
-#endif /* LINUX */
 
 int
 sys_mmap(struct tcb *tcp)
@@ -317,7 +294,7 @@ sys_mmap(struct tcb *tcp)
 	 * from pages to bytes. See test/mmap_offset_decode.c
 	 * Why SH64 and i386 are handled differently?
 	 */
-#if defined(LINUX) && defined(SH64)
+#if defined(SH64)
 	/*
 	 * Old mmap differs from new mmap in specifying the
 	 * offset in units of bytes rather than pages.  We
@@ -343,7 +320,7 @@ int
 sys_mmap64(struct tcb *tcp)
 {
 	if (entering(tcp)) {
-#if !defined(LINUX) || defined(ALPHA) || defined(X32)
+#if defined(ALPHA) || defined(X32)
 		long *u_arg = tcp->u_arg;
 #else
 		long u_arg[7];
@@ -372,7 +349,7 @@ sys_mmap64(struct tcb *tcp)
 		tprints(", ");
 		printfd(tcp, u_arg[4]);
 		/* offset */
-#if !defined(LINUX) || defined(ALPHA) || defined(X32)
+#if defined(ALPHA) || defined(X32)
 		printllval(tcp, ", %#llx", 5);
 #else
 		/* NOTE: not verified that [5] and [6] should be used.
@@ -385,7 +362,6 @@ sys_mmap64(struct tcb *tcp)
 	return RVAL_HEX;
 }
 #endif /* _LFS64_LARGEFILE || HAVE_LONG_LONG_OFF_T */
-
 
 int
 sys_munmap(struct tcb *tcp)
@@ -407,8 +383,6 @@ sys_mprotect(struct tcb *tcp)
 	}
 	return 0;
 }
-
-#ifdef LINUX
 
 static const struct xlat mremap_flags[] = {
 	{ MREMAP_MAYMOVE,	"MREMAP_MAYMOVE"	},
@@ -453,7 +427,6 @@ static const struct xlat madvise_cmds[] = {
 	{ 0,			NULL },
 };
 
-
 int
 sys_madvise(struct tcb *tcp)
 {
@@ -463,7 +436,6 @@ sys_madvise(struct tcb *tcp)
 	}
 	return 0;
 }
-
 
 static const struct xlat mlockall_flags[] = {
 #ifdef MCL_CURRENT
@@ -483,9 +455,6 @@ sys_mlockall(struct tcb *tcp)
 	}
 	return 0;
 }
-
-
-#endif /* LINUX */
 
 #ifdef MS_ASYNC
 
@@ -594,7 +563,7 @@ sys_mincore(struct tcb *tcp)
 	return 0;
 }
 
-#if defined(ALPHA) || defined(FREEBSD) || defined(IA64) || defined(SUNOS4) || defined(SVR4) || defined(SPARC) || defined(SPARC64)
+#if defined(ALPHA) || defined(IA64) || defined(SPARC) || defined(SPARC64)
 int
 sys_getpagesize(struct tcb *tcp)
 {
@@ -602,9 +571,9 @@ sys_getpagesize(struct tcb *tcp)
 		return RVAL_HEX;
 	return 0;
 }
-#endif /* ALPHA || FREEBSD || IA64 || SUNOS4 || SVR4 */
+#endif
 
-#if defined(LINUX) && defined(__i386__)
+#if defined(I386)
 void
 print_ldt_entry(struct modify_ldt_ldt_s *ldt_entry)
 {
@@ -696,10 +665,9 @@ sys_get_thread_area(struct tcb *tcp)
 	return 0;
 
 }
-#endif /* LINUX && __i386__ */
+#endif /* I386 */
 
-#if defined(LINUX) && defined(M68K)
-
+#if defined(M68K)
 int
 sys_set_thread_area(struct tcb *tcp)
 {
@@ -716,7 +684,6 @@ sys_get_thread_area(struct tcb *tcp)
 }
 #endif
 
-#if defined(LINUX)
 int
 sys_remap_file_pages(struct tcb *tcp)
 {
@@ -734,7 +701,6 @@ sys_remap_file_pages(struct tcb *tcp)
 	return 0;
 }
 
-
 #define MPOL_DEFAULT    0
 #define MPOL_PREFERRED  1
 #define MPOL_BIND       2
@@ -746,7 +712,6 @@ sys_remap_file_pages(struct tcb *tcp)
 #define MPOL_MF_STRICT  (1<<0)
 #define MPOL_MF_MOVE	(1<<1)
 #define MPOL_MF_MOVE_ALL (1<<2)
-
 
 static const struct xlat policies[] = {
 	{ MPOL_DEFAULT,		"MPOL_DEFAULT"		},
@@ -774,7 +739,6 @@ static const struct xlat move_pages_flags[] = {
 	{ MPOL_MF_MOVE_ALL,	"MPOL_MF_MOVE_ALL"	},
 	{ 0,			NULL			}
 };
-
 
 static void
 get_nodes(struct tcb *tcp, unsigned long ptr, unsigned long maxnodes, int err)
@@ -861,6 +825,18 @@ sys_get_mempolicy(struct tcb *tcp)
 }
 
 int
+sys_migrate_pages(struct tcb *tcp)
+{
+	if (entering(tcp)) {
+		tprintf("%ld, ", (long) (pid_t) tcp->u_arg[0]);
+		get_nodes(tcp, tcp->u_arg[2], tcp->u_arg[1], 0);
+		tprints(", ");
+		get_nodes(tcp, tcp->u_arg[3], tcp->u_arg[1], 0);
+	}
+	return 0;
+}
+
+int
 sys_move_pages(struct tcb *tcp)
 {
 	if (entering(tcp)) {
@@ -930,9 +906,8 @@ sys_move_pages(struct tcb *tcp)
 	}
 	return 0;
 }
-#endif
 
-#if defined(LINUX) && defined(POWERPC)
+#if defined(POWERPC)
 int
 sys_subpage_prot(struct tcb *tcp)
 {

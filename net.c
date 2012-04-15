@@ -26,90 +26,74 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-
 #if defined(HAVE_SIN6_SCOPE_ID_LINUX)
-#define in6_addr in6_addr_libc
-#define ipv6_mreq ipv6_mreq_libc
-#define sockaddr_in6 sockaddr_in6_libc
+# define in6_addr in6_addr_libc
+# define ipv6_mreq ipv6_mreq_libc
+# define sockaddr_in6 sockaddr_in6_libc
 #endif
-
 #include <netinet/in.h>
 #ifdef HAVE_NETINET_TCP_H
-#include <netinet/tcp.h>
+# include <netinet/tcp.h>
 #endif
 #ifdef HAVE_NETINET_UDP_H
-#include <netinet/udp.h>
+# include <netinet/udp.h>
 #endif
 #ifdef HAVE_NETINET_SCTP_H
-#include <netinet/sctp.h>
+# include <netinet/sctp.h>
 #endif
 #include <arpa/inet.h>
 #include <net/if.h>
-#if defined(LINUX)
 #include <asm/types.h>
 #if defined(__GLIBC__) && (__GLIBC__ >= 2) && (__GLIBC__ + __GLIBC_MINOR__ >= 3)
-#  include <netipx/ipx.h>
+# include <netipx/ipx.h>
 #else
-#  include <linux/ipx.h>
+# include <linux/ipx.h>
 #endif
-#endif /* LINUX */
 
-#if defined (__GLIBC__) && (((__GLIBC__ < 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 1)) || defined(HAVE_SIN6_SCOPE_ID_LINUX))
-#if defined(HAVE_LINUX_IN6_H)
-#if defined(HAVE_SIN6_SCOPE_ID_LINUX)
-#undef in6_addr
-#undef ipv6_mreq
-#undef sockaddr_in6
-#define in6_addr in6_addr_kernel
-#define ipv6_mreq ipv6_mreq_kernel
-#define sockaddr_in6 sockaddr_in6_kernel
-#endif
-#include <linux/in6.h>
-#if defined(HAVE_SIN6_SCOPE_ID_LINUX)
-#undef in6_addr
-#undef ipv6_mreq
-#undef sockaddr_in6
-#define in6_addr in6_addr_libc
-#define ipv6_mreq ipv6_mreq_libc
-#define sockaddr_in6 sockaddr_in6_kernel
-#endif
-#endif
+#if defined(__GLIBC__) && (((__GLIBC__ < 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 1)) || defined(HAVE_SIN6_SCOPE_ID_LINUX))
+# if defined(HAVE_LINUX_IN6_H)
+#  if defined(HAVE_SIN6_SCOPE_ID_LINUX)
+#   undef in6_addr
+#   undef ipv6_mreq
+#   undef sockaddr_in6
+#   define in6_addr in6_addr_kernel
+#   define ipv6_mreq ipv6_mreq_kernel
+#   define sockaddr_in6 sockaddr_in6_kernel
+#  endif
+#  include <linux/in6.h>
+#  if defined(HAVE_SIN6_SCOPE_ID_LINUX)
+#   undef in6_addr
+#   undef ipv6_mreq
+#   undef sockaddr_in6
+#   define in6_addr in6_addr_libc
+#   define ipv6_mreq ipv6_mreq_libc
+#   define sockaddr_in6 sockaddr_in6_kernel
+#  endif
+# endif
 #endif
 
 #if defined(HAVE_SYS_UIO_H)
-#include <sys/uio.h>
+# include <sys/uio.h>
 #endif
-
 #if defined(HAVE_LINUX_NETLINK_H)
-#include <linux/netlink.h>
+# include <linux/netlink.h>
 #endif
-
 #if defined(HAVE_LINUX_IF_PACKET_H)
-#include <linux/if_packet.h>
+# include <linux/if_packet.h>
 #endif
-
 #if defined(HAVE_LINUX_ICMP_H)
-#include <linux/icmp.h>
+# include <linux/icmp.h>
 #endif
-
 #ifndef PF_UNSPEC
-#define PF_UNSPEC AF_UNSPEC
+# define PF_UNSPEC AF_UNSPEC
 #endif
 
-#if UNIXWARE >= 7
-#define HAVE_SENDMSG		1		/* HACK - *FIXME* */
-#endif
-
-#ifdef LINUX
 /* Under Linux these are enums so we can't test for them with ifdef. */
 #define IPPROTO_EGP IPPROTO_EGP
 #define IPPROTO_PUP IPPROTO_PUP
@@ -117,7 +101,6 @@
 #define IPPROTO_IGMP IPPROTO_IGMP
 #define IPPROTO_RAW IPPROTO_RAW
 #define IPPROTO_MAX IPPROTO_MAX
-#endif
 
 static const struct xlat domains[] = {
 #ifdef PF_AAL5
@@ -595,6 +578,9 @@ static const struct xlat msg_flags[] = {
 #ifdef MSG_MORE
 	{ MSG_MORE,		"MSG_MORE"		},
 #endif
+#ifdef MSG_WAITFORONE
+	{ MSG_WAITFORONE,	"MSG_WAITFORONE"	},
+#endif
 #ifdef MSG_CMSG_CLOEXEC
 	{ MSG_CMSG_CLOEXEC,	"MSG_CMSG_CLOEXEC"	},
 #endif
@@ -731,7 +717,7 @@ static const struct xlat sockoptions[] = {
 	{ 0,		NULL		},
 };
 
-#if !defined (SOL_IP) && defined (IPPROTO_IP)
+#if !defined(SOL_IP) && defined(IPPROTO_IP)
 #define SOL_IP IPPROTO_IP
 #endif
 
@@ -1078,7 +1064,7 @@ static const struct xlat socksctpoptions[] = {
 };
 #endif
 
-#if  !defined (SOL_TCP) && defined (IPPROTO_TCP)
+#if !defined(SOL_TCP) && defined(IPPROTO_TCP)
 #define SOL_TCP IPPROTO_TCP
 #endif
 
@@ -1213,7 +1199,6 @@ static const struct xlat af_packet_types[] = {
 };
 #endif /* defined(AF_PACKET) */
 
-
 void
 printsock(struct tcb *tcp, long addr, int addrlen)
 {
@@ -1225,7 +1210,7 @@ printsock(struct tcb *tcp, long addr, int addrlen)
 #ifdef HAVE_INET_NTOP
 		struct sockaddr_in6 sa6;
 #endif
-#if defined(LINUX) && defined(AF_IPX)
+#if defined(AF_IPX)
 		struct sockaddr_ipx sipx;
 #endif
 #ifdef AF_PACKET
@@ -1265,10 +1250,10 @@ printsock(struct tcb *tcp, long addr, int addrlen)
 		if (addrlen == 2) {
 			tprints("NULL");
 		} else if (addrbuf.sau.sun_path[0]) {
-			tprints("path=");
+			tprints("sun_path=");
 			printpathn(tcp, addr + 2, strlen(addrbuf.sau.sun_path));
 		} else {
-			tprints("path=@");
+			tprints("sun_path=@");
 			printpathn(tcp, addr + 3, strlen(addrbuf.sau.sun_path + 1));
 		}
 		break;
@@ -1304,7 +1289,7 @@ printsock(struct tcb *tcp, long addr, int addrlen)
 #endif
 		break;
 #endif
-#if defined(AF_IPX) && defined(linux)
+#if defined(AF_IPX)
 	case AF_IPX:
 		{
 			int i;
@@ -1322,7 +1307,7 @@ printsock(struct tcb *tcp, long addr, int addrlen)
 			tprintf("/[%02x]", addrbuf.sipx.sipx_type);
 		}
 		break;
-#endif /* AF_IPX && linux */
+#endif /* AF_IPX */
 #ifdef AF_PACKET
 	case AF_PACKET:
 		{
@@ -1339,7 +1324,7 @@ printsock(struct tcb *tcp, long addr, int addrlen)
 		}
 		break;
 
-#endif /* AF_APACKET */
+#endif /* AF_PACKET */
 #ifdef AF_NETLINK
 	case AF_NETLINK:
 		tprintf("pid=%d, groups=%08x", addrbuf.nl.nl_pid, addrbuf.nl.nl_groups);
@@ -1455,15 +1440,15 @@ printmsghdr(struct tcb *tcp, long addr)
 	do_msghdr(tcp, &msg);
 }
 
-#ifdef LINUX
 static void
-printmmsghdr(struct tcb *tcp, long addr)
+printmmsghdr(struct tcb *tcp, long addr, unsigned int idx)
 {
 	struct mmsghdr {
 		struct msghdr msg_hdr;
 		unsigned msg_len;
 	} mmsg;
 
+	addr += sizeof(mmsg) * idx;
 	if (umove(tcp, addr, &mmsg) < 0) {
 		tprintf("%#lx", addr);
 		return;
@@ -1472,7 +1457,30 @@ printmmsghdr(struct tcb *tcp, long addr)
 	do_msghdr(tcp, &mmsg.msg_hdr);
 	tprintf(", %u}", mmsg.msg_len);
 }
-#endif
+
+static void
+decode_mmsg(struct tcb *tcp)
+{
+	/* mmsgvec */
+	if (syserror(tcp)) {
+		tprintf("%#lx", tcp->u_arg[1]);
+	} else {
+		unsigned int len = tcp->u_rval;
+		unsigned int i;
+
+		tprints("{");
+		for (i = 0; i < len; ++i) {
+			if (i)
+				tprints(", ");
+			printmmsghdr(tcp, tcp->u_arg[1], i);
+		}
+		tprints("}");
+	}
+	/* vlen */
+	tprintf(", %u, ", (unsigned int) tcp->u_arg[2]);
+	/* flags */
+	printflags(msg_flags, tcp->u_arg[3], "MSG_???");
+}
 
 #endif /* HAVE_SENDMSG */
 
@@ -1525,33 +1533,6 @@ sys_socket(struct tcb *tcp)
 	}
 	return 0;
 }
-
-#ifdef SVR4
-int
-sys_so_socket(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		/* not sure really what these args are... but this
-		 * is how truss prints it
-		 */
-		tprintf("%ld, %ld, %ld, ",
-		  tcp->u_arg[0], tcp->u_arg[1], tcp->u_arg[2]);
-		printpath(tcp, tcp->u_arg[3]);
-		tprintf(", %ld", tcp->u_arg[4]);
-	}
-	return 0;
-}
-
-int
-sys_so_socketpair(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		/* not sure what this arg is */
-		tprintf("0x%lx", tcp->u_arg[0]);
-	}
-	return 0;
-}
-#endif /* SVR4 */
 
 int
 sys_bind(struct tcb *tcp)
@@ -1613,13 +1594,11 @@ sys_accept(struct tcb *tcp)
 	return do_accept(tcp, -1);
 }
 
-#ifdef LINUX
 int
 sys_accept4(struct tcb *tcp)
 {
 	return do_accept(tcp, 3);
 }
-#endif
 
 int
 sys_send(struct tcb *tcp)
@@ -1663,6 +1642,24 @@ sys_sendmsg(struct tcb *tcp)
 		/* flags */
 		tprints(", ");
 		printflags(msg_flags, tcp->u_arg[2], "MSG_???");
+	}
+	return 0;
+}
+
+int
+sys_sendmmsg(struct tcb *tcp)
+{
+	if (entering(tcp)) {
+		/* sockfd */
+		tprintf("%d, ", (int) tcp->u_arg[0]);
+		if (!verbose(tcp)) {
+			tprintf("%#lx, %u, ",
+				tcp->u_arg[1], (unsigned int) tcp->u_arg[2]);
+			printflags(msg_flags, tcp->u_arg[3], "MSG_???");
+		}
+	} else {
+		if (verbose(tcp))
+			decode_mmsg(tcp);
 	}
 	return 0;
 }
@@ -1749,7 +1746,6 @@ sys_recvmsg(struct tcb *tcp)
 	return 0;
 }
 
-#ifdef LINUX
 int
 sys_recvmmsg(struct tcb *tcp)
 {
@@ -1773,13 +1769,7 @@ sys_recvmmsg(struct tcb *tcp)
 		return 0;
 	} else {
 		if (verbose(tcp)) {
-			if (syserror(tcp))
-				tprintf("%#lx", tcp->u_arg[1]);
-			else
-				printmmsghdr(tcp, tcp->u_arg[1]);
-			tprintf(", %ld, ", tcp->u_arg[2]);
-			/* flags */
-			printflags(msg_flags, tcp->u_arg[3], "MSG_???");
+			decode_mmsg(tcp);
 			/* timeout on entrance */
 			tprintf(", %s", tcp->auxstr ? tcp->auxstr : "{...}");
 			free((void *) tcp->auxstr);
@@ -1799,7 +1789,6 @@ sys_recvmmsg(struct tcb *tcp)
 		return RVAL_STR;
 	}
 }
-#endif
 
 #endif /* HAVE_SENDMSG */
 
@@ -1839,14 +1828,14 @@ do_pipe(struct tcb *tcp, int flags_arg)
 		if (syserror(tcp)) {
 			tprintf("%#lx", tcp->u_arg[0]);
 		} else {
-#if defined(LINUX) && !defined(SPARC) && !defined(SPARC64) && !defined(SH) && !defined(IA64)
+#if !defined(SPARC) && !defined(SPARC64) && !defined(SH) && !defined(IA64)
 			int fds[2];
 
 			if (umoven(tcp, tcp->u_arg[0], sizeof fds, (char *) fds) < 0)
 				tprints("[...]");
 			else
 				tprintf("[%u, %u]", fds[0], fds[1]);
-#elif defined(SPARC) || defined(SPARC64) || defined(SH) || defined(SVR4) || defined(FREEBSD) || defined(IA64)
+#elif defined(SPARC) || defined(SPARC64) || defined(SH) || defined(IA64)
 			tprintf("[%lu, %lu]", tcp->u_rval, getrval2(tcp));
 #else
 			tprintf("%#lx", tcp->u_arg[0]);
@@ -1866,20 +1855,16 @@ sys_pipe(struct tcb *tcp)
 	return do_pipe(tcp, -1);
 }
 
-#ifdef LINUX
 int
 sys_pipe2(struct tcb *tcp)
 {
 	return do_pipe(tcp, 1);
 }
-#endif
 
 int
 sys_socketpair(struct tcb *tcp)
 {
-#ifdef LINUX
 	int fds[2];
-#endif
 
 	if (entering(tcp)) {
 		printxval(domains, tcp->u_arg[0], "PF_???");
@@ -1907,15 +1892,10 @@ sys_socketpair(struct tcb *tcp)
 			tprintf(", %#lx", tcp->u_arg[3]);
 			return 0;
 		}
-#ifdef LINUX
 		if (umoven(tcp, tcp->u_arg[3], sizeof fds, (char *) fds) < 0)
 			tprints(", [...]");
 		else
 			tprintf(", [%u, %u]", fds[0], fds[1]);
-#endif /* LINUX */
-#if defined(SUNOS4) || defined(SVR4) || defined(FREEBSD)
-		tprintf(", [%lu, %lu]", tcp->u_rval, getrval2(tcp));
-#endif /* SUNOS4 || SVR4 || FREEBSD */
 	}
 	return 0;
 }
@@ -2081,11 +2061,11 @@ printsockopt(struct tcb *tcp, int level, int name, long addr, int len)
 	printxval(socketlayers, level, "SOL_??");
 	tprints(", ");
 	switch (level) {
-	    case SOL_SOCKET:
+	case SOL_SOCKET:
 		printxval(sockoptions, name, "SO_???");
 		switch (name) {
 #if defined(SO_LINGER)
-		    case SO_LINGER:
+		case SO_LINGER:
 			if (len == sizeof(struct linger)) {
 				struct linger linger;
 				if (umove(tcp, addr, &linger) < 0)
@@ -2100,30 +2080,30 @@ printsockopt(struct tcb *tcp, int level, int name, long addr, int len)
 		}
 		break;
 #ifdef SOL_IP
-	    case SOL_IP:
+	case SOL_IP:
 		printxval(sockipoptions, name, "IP_???");
 		break;
 #endif
 #ifdef SOL_IPV6
-	    case SOL_IPV6:
+	case SOL_IPV6:
 		printxval(sockipv6options, name, "IPV6_???");
 		break;
 #endif
 #ifdef SOL_IPX
-	    case SOL_IPX:
+	case SOL_IPX:
 		printxval(sockipxoptions, name, "IPX_???");
 		break;
 #endif
 #ifdef SOL_PACKET
-	    case SOL_PACKET:
+	case SOL_PACKET:
 		printxval(sockpacketoptions, name, "PACKET_???");
 		/* TODO: decode packate_mreq for PACKET_*_MEMBERSHIP */
 		switch (name) {
 #ifdef PACKET_RX_RING
-		    case PACKET_RX_RING:
+		case PACKET_RX_RING:
 #endif
 #ifdef PACKET_TX_RING
-		    case PACKET_TX_RING:
+		case PACKET_TX_RING:
 #endif
 #if defined(PACKET_RX_RING) || defined(PACKET_TX_RING)
 			if (len == sizeof(struct tpacket_req)) {
@@ -2143,24 +2123,24 @@ printsockopt(struct tcb *tcp, int level, int name, long addr, int len)
 		break;
 #endif
 #ifdef SOL_TCP
-	    case SOL_TCP:
+	case SOL_TCP:
 		printxval(socktcpoptions, name, "TCP_???");
 		break;
 #endif
 #ifdef SOL_SCTP
-	   case SOL_SCTP:
+	case SOL_SCTP:
 		printxval(socksctpoptions, name, "SCTP_???");
 		break;
 #endif
 #ifdef SOL_RAW
-	    case SOL_RAW:
+	case SOL_RAW:
 		printxval(sockrawoptions, name, "RAW_???");
 		switch (name) {
 #if defined(ICMP_FILTER)
-		    case ICMP_FILTER:
-			tprints(", ");
-			printicmpfilter(tcp, addr);
-			return 0;
+			case ICMP_FILTER:
+				tprints(", ");
+				printicmpfilter(tcp, addr);
+				return 0;
 #endif
 		}
 		break;
@@ -2169,7 +2149,7 @@ printsockopt(struct tcb *tcp, int level, int name, long addr, int len)
 		/* SOL_AX25 SOL_ATALK SOL_NETROM SOL_UDP SOL_DECNET SOL_X25
 		 * etc. still need work  */
 
-	    default:
+	default:
 		tprintf("%u", name);
 	}
 
@@ -2185,7 +2165,6 @@ printsockopt(struct tcb *tcp, int level, int name, long addr, int len)
 	}
 	return 0;
 }
-
 
 #ifdef HAVE_STRUCT_OPTHDR
 
@@ -2233,131 +2212,3 @@ sys_setsockopt(struct tcb *tcp)
 	}
 	return 0;
 }
-
-#if UNIXWARE >= 7
-
-static const struct xlat sock_version[] = {
-	{ __NETLIB_UW211_SVR4,	"UW211_SVR4" },
-	{ __NETLIB_UW211_XPG4,	"UW211_XPG4" },
-	{ __NETLIB_GEMINI_SVR4,	"GEMINI_SVR4" },
-	{ __NETLIB_GEMINI_XPG4,	"GEMINI_XPG4" },
-	{ __NETLIB_FP1_SVR4,	"FP1_SVR4" },
-	{ __NETLIB_FP1_XPG4,	"FP1_XPG4" },
-	{ 0,			NULL },
-};
-
-
-int
-netlib_call(struct tcb *tcp, int (*func)())
-{
-	if (entering(tcp)) {
-		int i;
-		printxval(sock_version, tcp->u_arg[0], "__NETLIB_???");
-		tprints(", ");
-		--tcp->u_nargs;
-		for (i = 0; i < tcp->u_nargs; i++)
-			tcp->u_arg[i] = tcp->u_arg[i + 1];
-		return func(tcp);
-	}
-
-	return func(tcp);
-}
-
-int
-sys_xsocket(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_socket);
-}
-
-int
-sys_xsocketpair(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_socketpair);
-}
-
-int
-sys_xbind(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_bind);
-}
-
-int
-sys_xconnect(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_connect);
-}
-
-int
-sys_xlisten(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_listen);
-}
-
-int
-sys_xaccept(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_accept);
-}
-
-int
-sys_xsendmsg(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_sendmsg);
-}
-
-int
-sys_xrecvmsg(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_recvmsg);
-}
-
-int
-sys_xgetsockaddr(struct tcb *tcp)
-{
-	if (entering(tcp)) {
-		printxval(sock_version, tcp->u_arg[0], "__NETLIB_???");
-		tprints(", ");
-		if (tcp->u_arg[1] == 0) {
-			tprints("LOCALNAME, ");
-		}
-		else if (tcp->u_arg[1] == 1) {
-			tprints("REMOTENAME, ");
-		}
-		else {
-			tprintf("%ld, ", tcp->u_arg[1]);
-		}
-		tprintf("%ld, ", tcp->u_arg[2]);
-	}
-	else {
-		if (tcp->u_arg[3] == 0 || syserror(tcp)) {
-			tprintf("%#lx", tcp->u_arg[3]);
-		} else {
-			printsock(tcp, tcp->u_arg[3], tcp->u_arg[4]);
-		}
-		tprints(", ");
-		printnum(tcp, tcp->u_arg[4], "%lu");
-	}
-
-	return 0;
-
-}
-
-int
-sys_xgetsockopt(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_getsockopt);
-}
-
-int
-sys_xsetsockopt(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_setsockopt);
-}
-
-int
-sys_xshutdown(struct tcb *tcp)
-{
-	return netlib_call(tcp, sys_shutdown);
-}
-
-#endif /* UNIXWARE */

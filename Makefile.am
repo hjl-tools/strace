@@ -4,10 +4,9 @@ SUBDIRS = tests
 
 bin_PROGRAMS = strace
 man_MANS = strace.1
-bin_SCRIPTS = strace-graph
+bin_SCRIPTS = strace-graph strace-log-merge
 
-# OS is one of `linux', `sunos4', `svr4', or `freebsd'.
-OS		= @opsys@
+OS		= linux
 # ARCH is `i386', `m68k', `sparc', etc.
 ARCH		= @arch@
 
@@ -18,7 +17,7 @@ AM_CPPFLAGS = -I$(srcdir)/$(OS)/$(ARCH) -I$(srcdir)/$(OS) -I$(builddir)/$(OS)
 strace_SOURCES = strace.c syscall.c count.c util.c desc.c file.c ipc.c \
 		 io.c ioctl.c mem.c net.c process.c bjm.c quota.c \
 		 resource.c signal.c sock.c system.c term.c time.c \
-                proc.c scsi.c stream.c block.c pathtrace.c
+		 scsi.c stream.c block.c pathtrace.c mtd.c
 noinst_HEADERS = defs.h
 
 EXTRA_DIST = $(man_MANS) errnoent.sh signalent.sh syscallent.sh ioctlsort.c \
@@ -28,11 +27,12 @@ EXTRA_DIST = $(man_MANS) errnoent.sh signalent.sh syscallent.sh ioctlsort.c \
 	     debian/strace.docs debian/strace.examples debian/strace.install \
 	     debian/strace.manpages debian/strace-udeb.install \
 	     strace.spec \
-	     strace-graph ChangeLog ChangeLog-CVS COPYRIGHT CREDITS PORTING \
-	     README-freebsd README-linux README-sunos4 README-svr4 \
+	     strace-graph strace-log-merge \
+	     ChangeLog ChangeLog-CVS COPYRIGHT CREDITS \
+	     README-linux README-linux-ptrace \
 	     linux/ioctlsort.c linux/ioctlent.sh \
 	     linux/ioctlent.h.in linux/errnoent.h linux/signalent.h \
-	     linux/syscall.h linux/dummy.h \
+	     linux/syscall.h linux/dummy.h linux/mtd-abi.h \
 	     linux/i386/ioctlent.h.in linux/i386/syscallent.h \
 	     linux/alpha/errnoent.h linux/alpha/ioctlent.h.in \
 	     linux/alpha/signalent.h linux/alpha/syscallent.h \
@@ -86,16 +86,6 @@ EXTRA_DIST = $(man_MANS) errnoent.sh signalent.sh syscallent.sh ioctlsort.c \
 	     linux/x86_64/signalent1.h linux/x86_64/syscallent1.h \
 	     linux/x86_64/errnoent2.h linux/x86_64/ioctlent2.h \
 	     linux/x86_64/signalent2.h linux/x86_64/syscallent2.h \
-	     freebsd/ioctlent.sh \
-	     freebsd/syscalls.cat freebsd/syscalls.pl freebsd/syscalls.print \
-	     freebsd/i386/errnoent.h freebsd/i386/ioctlent.h \
-	     freebsd/i386/signalent.h \
-	     freebsd/i386/syscall.h freebsd/i386/syscallent.h \
-	     sunos4/dummy.h sunos4/errnoent.h \
-	     sunos4/ioctlent.h sunos4/ioctlent.sh sunos4/signalent.h \
-	     sunos4/syscall.h sunos4/syscallent.h \
-	     svr4/dummy.h svr4/errnoent.h svr4/ioctlent.h svr4/ioctlent.sh \
-	     svr4/signalent.h svr4/syscall.h svr4/syscallent.h \
 	     xlate.el
 
 .PHONY: srpm
@@ -132,8 +122,6 @@ $(srcdir)/CREDITS: $(top_srcdir)/CREDITS.in $(top_srcdir)/.mailmap \
 
 export TAR_OPTIONS = --owner=0 --group=0 --numeric-owner --mode=go-w,go+rX
 
-if LINUX
-
 IOCTLDIR = /usr/include
 IOCTLASM = asm
 
@@ -151,9 +139,6 @@ ioctls.h: $(srcdir)/linux/ioctlent.sh
 ioctldefs.h: ioctls.h ;
 
 endif
-endif
-
-if LINUX
 
 ioctlent_h = $(builddir)/$(OS)/ioctlent.h
 BUILT_SOURCES += $(ioctlent_h)
@@ -164,5 +149,3 @@ $(ioctlent_h): $(top_builddir)/config.status $(ioctlent_h_deps)
 	cat $(ioctlent_h_deps) | \
 		$(COMPILE) -E -P - | \
 		LC_ALL=C sort -u -k3,3 -k2,2 > $@
-
-endif

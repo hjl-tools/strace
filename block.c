@@ -26,9 +26,6 @@
  */
 
 #include "defs.h"
-#ifdef LINUX
-#include <stdint.h>
-#include <inttypes.h>
 #include <linux/blkpg.h>
 #include <linux/fs.h>
 #include <linux/hdreg.h>
@@ -282,4 +279,3 @@ block_ioctl(struct tcb *tcp, long code, long arg)
 	};
 	return 1;
 }
-#endif /* LINUX */

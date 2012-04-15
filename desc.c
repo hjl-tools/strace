@@ -26,32 +26,25 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 #include "defs.h"
-
 #include <fcntl.h>
 #include <sys/file.h>
-#ifdef LINUX
-#include <inttypes.h>
-#endif
 #ifdef HAVE_SYS_EPOLL_H
-#include <sys/epoll.h>
+# include <sys/epoll.h>
 #endif
 #ifdef HAVE_LIBAIO_H
-#include <libaio.h>
+# include <libaio.h>
 #endif
 
 #if HAVE_LONG_LONG_OFF_T
 /*
  * Hacks for systems that have a long long off_t
  */
-#define flock64	flock		/* Horrid hack */
-#define printflock printflock64	/* Horrider hack */
+# define flock64	flock		/* Horrid hack */
+# define printflock printflock64	/* Horrider hack */
 #endif
-
 
 static const struct xlat fcntlcmds[] = {
 	{ F_DUPFD,	"F_DUPFD"	},
@@ -237,8 +230,8 @@ printflock(struct tcb *tcp, long addr, int getlk)
 	struct flock fl;
 
 #if SUPPORTED_PERSONALITIES > 1
-	if (personality_wordsize[current_personality] != sizeof(fl.l_start)) {
-		if (personality_wordsize[current_personality] == 4) {
+	if (current_wordsize != sizeof(fl.l_start)) {
+		if (current_wordsize == 4) {
 			/* 32-bit x86 app on x86_64 and similar cases */
 			struct {
 				short int l_type;
@@ -259,7 +252,7 @@ printflock(struct tcb *tcp, long addr, int getlk)
 		} else {
 			/* let people know we have a problem here */
 			tprintf("{ <decode error: unsupported wordsize %d> }",
-				personality_wordsize[current_personality]);
+				current_wordsize);
 			return;
 		}
 	} else
@@ -461,21 +454,19 @@ sys_dup2(struct tcb *tcp)
 	return do_dup2(tcp, -1);
 }
 
-#ifdef LINUX
 int
 sys_dup3(struct tcb *tcp)
 {
 	return do_dup2(tcp, 2);
 }
-#endif
 
-#if defined(ALPHA) || defined(FREEBSD) || defined(SUNOS4)
+#if defined(ALPHA)
 int
 sys_getdtablesize(struct tcb *tcp)
 {
 	return 0;
 }
-#endif /* ALPHA || FREEBSD || SUNOS4 */
+#endif
 
 static int
 decode_select(struct tcb *tcp, long *args, enum bitness_t bitness)
@@ -581,7 +572,6 @@ decode_select(struct tcb *tcp, long *args, enum bitness_t bitness)
 				break;
 		}
 		free(fds);
-#ifdef LINUX
 		/* This contains no useful information on SunOS.  */
 		if (args[4]) {
 			if (outptr < end_outstr - (10 + TIMEVAL_TEXT_BUFSIZE)) {
@@ -589,7 +579,6 @@ decode_select(struct tcb *tcp, long *args, enum bitness_t bitness)
 				outptr = sprinttv(outptr, tcp, args[4], bitness, /*special:*/ 0);
 			}
 		}
-#endif /* LINUX */
 		*outptr = '\0';
 		tcp->auxstr = outstr;
 		return RVAL_STR;
@@ -597,8 +586,6 @@ decode_select(struct tcb *tcp, long *args, enum bitness_t bitness)
 	}
 	return 0;
 }
-
-#ifdef LINUX
 
 int
 sys_oldselect(struct tcb *tcp)
@@ -677,12 +664,11 @@ static const struct xlat epollevents[] = {
 	{ 0,		NULL		}
 };
 
+/* Not aliased to printargs_ld: we want it to have a distinct address */
 int
 sys_epoll_create(struct tcb *tcp)
 {
-	if (entering(tcp))
-		tprintf("%ld", tcp->u_arg[0]);
-	return 0;
+	return printargs_ld(tcp);
 }
 
 static const struct xlat epollflags[] = {
@@ -998,7 +984,7 @@ sys_io_getevents(struct tcb *tcp)
 	} else {
 		if (tcp->u_rval == 0) {
 			tprints("{}");
-		} else  {
+		} else {
 #ifdef HAVE_LIBAIO_H
 			struct io_event *events = (void *)tcp->u_arg[3];
 			long i, nr = tcp->u_rval;
@@ -1020,7 +1006,7 @@ sys_io_getevents(struct tcb *tcp)
 			}
 			tprints("}, ");
 #else
-				tprints("{...}");
+			tprints("{...}");
 #endif
 		}
 
@@ -1028,7 +1014,6 @@ sys_io_getevents(struct tcb *tcp)
 	}
 	return 0;
 }
-#endif /* LINUX */
 
 int
 sys_select(struct tcb *tcp)
@@ -1036,7 +1021,6 @@ sys_select(struct tcb *tcp)
 	return decode_select(tcp, tcp->u_arg, BITNESS_CURRENT);
 }
 
-#ifdef LINUX
 int
 sys_pselect6(struct tcb *tcp)
 {
@@ -1084,4 +1068,3 @@ sys_eventfd2(struct tcb *tcp)
 {
 	return do_eventfd(tcp, 1);
 }
-#endif

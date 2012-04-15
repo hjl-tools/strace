@@ -10,40 +10,6 @@ AC_CANONICAL_HOST
 
 AC_PROG_CC
 
-AC_MSG_CHECKING([for supported operating system])
-case "$host_os" in
-*linux*)
-	opsys=linux
-	AC_DEFINE([LINUX], 1, [Define for the Linux operating system.])
-	;;
-sunos4*)
-	opsys=sunos4
-	AC_DEFINE([SUNOS4], 1, [Define for the SunOS 4.x operating system.])
-	;;
-solaris2* | sysv[[45]]* | irix[[56]]*)
-	opsys=svr4
-	AC_DEFINE([SVR4], 1, [Define for the System V release 4 operating
-system or a derivative like Solaris 2.x or Irix 5.x.])
-	case "$host_os" in
-	sysv4.2uw*)
-		AC_DEFINE(UNIXWARE, 2, [Define for UnixWare systems.])
-		;;
-	sysv5*)
-		AC_DEFINE(UNIXWARE, 7, [Define for UnixWare systems.])
-		;;
-	esac
-	;;
-freebsd*)
-	opsys=freebsd
-	AC_DEFINE([FREEBSD], 1, [Define for the FreeBSD operating system.])
-	;;
-*)
-	AC_MSG_RESULT([NO!])
-	AC_MSG_ERROR([operating system $host_os is not supported by strace])
-	;;
-esac
-AC_MSG_RESULT($opsys)
-
 AC_MSG_CHECKING([for supported architecture])
 case "$host_cpu" in
 bfin)
@@ -145,50 +111,21 @@ microblaze*)
 esac
 AC_MSG_RESULT($arch)
 
-AC_SUBST(opsys)
 AC_SUBST(arch)
 
-AM_CONDITIONAL([LINUX], [test x$opsys = xlinux])
 AM_CONDITIONAL([I386], [test x$arch = xi386])
 AM_CONDITIONAL([X86_64], [test x$arch = xx86_64])
 AM_CONDITIONAL([X32], [test x$arch = xx32])
-AM_CONDITIONAL([SUNOS4], [test x$opsys = xsunos4])
-AM_CONDITIONAL([SVR4], [test x$opsys = xsvr4])
-AM_CONDITIONAL([FREEBSD], [test x$opsys = xfreebsd])
 
 AC_GNU_SOURCE
 
 AC_INCLUDEDIR
 
-if test "x$opsys" = "xsunos4" && test "x$arch" = "xsparc"
-then
-	AC_MSG_CHECKING(for valid machine include directory)
-	if test -d "$includedir/sun4"
-	then
-		rm -f machine
-		ln -s $includedir/sun4 machine
-		AC_MSG_RESULT(yes)
-		AC_DEFINE(SUNOS4_KERNEL_ARCH_KLUDGE, 1, [
-Define if you are have a SPARC with SUNOS4 and your want a version
-of strace that will work on sun4, sun4c and sun4m kernel architectures.
-Only useful if you have a symbolic link from machine to /usr/include/sun4
-in the compilation directory.])
-	else
-		AC_MSG_RESULT(no)
-	fi
-fi
-
 gl_WARN_ADD([-Wall])
 gl_WARN_ADD([-Wwrite-strings])
-if test "x$opsys" = "xsunos4"
-then
-	# SunOS 4.x header files don't declare int functions.
-	gl_WARN_ADD([-Wno-implicit])
-fi
 AC_SUBST([WARN_CFLAGS])
 
 AC_PROG_CPP
-AC_PROG_GCC_TRADITIONAL
 AC_PROG_INSTALL
 AC_C_CONST
 AC_C_BIGENDIAN
@@ -196,14 +133,16 @@ AC_HEADER_STDC
 AC_HEADER_STDBOOL
 AC_HEADER_DIRENT
 AC_HEADER_STAT
-AC_CHECK_MEMBERS([struct stat.st_blksize,
-		  struct stat.st_blocks,
-		  struct stat.st_aclcnt,
-		  struct stat.st_flags,
-		  struct stat.st_fstype,
-		  struct stat.st_gen,
-		  struct stat.st_level,
-		  struct stat.st_rdev])
+AC_CHECK_MEMBERS(m4_normalize([
+	struct stat.st_aclcnt,
+	struct stat.st_blksize,
+	struct stat.st_blocks,
+	struct stat.st_flags,
+	struct stat.st_fstype,
+	struct stat.st_gen,
+	struct stat.st_level,
+	struct stat.st_rdev
+]))
 AC_STAT64
 AC_STATFS64
 
@@ -220,63 +159,48 @@ AC_CHECK_MEMBERS([struct sockaddr_in6.sin6_scope_id],,,
 AC_CHECK_TYPES([long long])
 AC_LITTLE_ENDIAN_LONG_LONG
 AC_OFF_T_IS_LONG_LONG
-AC_RLIM_T_IS_LONG_LONG
 AC_CHECK_TYPES([struct opthdr],,, [#include <sys/socket.h>])
 AC_CHECK_TYPES([struct t_opthdr],,, [#include <sys/tiuser.h>])
 
-if test x$opsys != xlinux; then
-AC_CHECK_LIB(nsl, main)
-fi
-
-AC_CHECK_FUNCS([ \
-	fork \
-	getdents \
-	if_indextoname \
-	inet_ntop \
-	mctl \
-	prctl \
-	pread \
-	sendmsg \
-	sigaction \
-	strerror \
-	strsignal \
-	sys_siglist \
-	_sys_siglist \
-	stpcpy \
-])
-AC_CHECK_HEADERS([ \
-	inttypes.h \
-	ioctls.h \
-	libaio.h \
-	mqueue.h \
-	poll.h \
-	stropts.h \
-	termio.h \
-	sys/acl.h \
-	sys/aio.h \
-	sys/asynch.h \
-	sys/conf.h \
-	sys/door.h \
-	sys/epoll.h \
-	sys/filio.h \
-	sys/ioctl.h \
-	sys/nscsys.h \
-	sys/poll.h \
-	sys/ptrace.h \
-	sys/reg.h \
-	sys/stream.h \
-	sys/sysconfig.h \
-	sys/tihdr.h \
-	sys/tiuser.h \
-	sys/uio.h \
-	sys/vfs.h \
-	asm/cachectl.h \
-	asm/sysmips.h \
-	linux/capability.h \
-	linux/ptrace.h \
-	linux/utsname.h \
-	netinet/sctp.h \
-], [], [])
+AC_CHECK_FUNCS(m4_normalize([
+	fork
+	if_indextoname
+	inet_ntop
+	prctl
+	process_vm_readv
+	sendmsg
+	sigaction
+	stpcpy
+	strerror
+	strsignal
+	_sys_siglist
+	sys_siglist
+]))
+AC_CHECK_HEADERS(m4_normalize([
+	asm/cachectl.h
+	asm/sysmips.h
+	inttypes.h
+	ioctls.h
+	libaio.h
+	linux/capability.h
+	linux/ptrace.h
+	linux/utsname.h
+	mqueue.h
+	netinet/sctp.h
+	poll.h
+	stropts.h
+	sys/acl.h
+	sys/asynch.h
+	sys/conf.h
+	sys/epoll.h
+	sys/filio.h
+	sys/ioctl.h
+	sys/poll.h
+	sys/ptrace.h
+	sys/reg.h
+	sys/uio.h
+	sys/vfs.h
+]))
 AC_CHECK_HEADERS([linux/icmp.h linux/in6.h linux/netlink.h linux/if_packet.h],
                  [], [], [#include <stddef.h>
 #include <sys/socket.h>
@@ -286,11 +210,7 @@ AC_CHECK_TYPES([struct sigcontext_struct,
 		struct sigcontext],,, [#include <signal.h>])
 AC_CHECK_HEADERS([netinet/tcp.h netinet/udp.h],,, [#include <netinet/in.h>])
 
-AC_MP_PROCFS
-AC_POLLABLE_PROCFS
-
 AC_CHECK_MEMBERS([struct msghdr.msg_control],,, [#include <sys/socket.h>])
-AC_STRUCT_PR_SYSCALL
 
 AC_CHECK_MEMBERS([struct T_conn_res.QUEUE_ptr,
                   struct T_conn_res.ACCEPTOR_id],,,
@@ -311,25 +231,25 @@ AC_CHECK_MEMBERS([struct sigcontext.sc_hi2],,, [#include <signal.h>
 # include <asm/sigcontext.h>
 #endif])
 
-
 AC_CHECK_DECLS([sys_errlist])
 AC_CHECK_DECLS([sys_siglist, _sys_siglist],,, [#include <signal.h>])
-AC_CHECK_DECLS([
-		PTRACE_SETOPTIONS,
-		PTRACE_GETEVENTMSG,
-		PTRACE_GETSIGINFO,
-		PTRACE_O_TRACESYSGOOD,
-		PTRACE_O_TRACEFORK,
-		PTRACE_O_TRACEVFORK,
-		PTRACE_O_TRACECLONE,
-		PTRACE_O_TRACEEXEC,
-		PTRACE_O_TRACEEXIT,
-		PTRACE_EVENT_FORK,
-		PTRACE_EVENT_VFORK,
-		PTRACE_EVENT_CLONE,
-		PTRACE_EVENT_EXEC,
-		PTRACE_EVENT_VFORK_DONE,
-		PTRACE_EVENT_EXIT],,, [#include <sys/ptrace.h>])
+AC_CHECK_DECLS(m4_normalize([
+	PTRACE_EVENT_CLONE,
+	PTRACE_EVENT_EXEC,
+	PTRACE_EVENT_EXIT,
+	PTRACE_EVENT_FORK,
+	PTRACE_EVENT_VFORK,
+	PTRACE_EVENT_VFORK_DONE,
+	PTRACE_GETEVENTMSG,
+	PTRACE_GETSIGINFO,
+	PTRACE_O_TRACECLONE,
+	PTRACE_O_TRACEEXEC,
+	PTRACE_O_TRACEEXIT,
+	PTRACE_O_TRACEFORK,
+	PTRACE_O_TRACESYSGOOD,
+	PTRACE_O_TRACEVFORK,
+	PTRACE_SETOPTIONS
+]),,, [#include <sys/ptrace.h>])
 
 AC_CACHE_CHECK([for BLKGETSIZE64], [ac_cv_have_blkgetsize64],
 	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
@@ -339,6 +259,9 @@ AC_CACHE_CHECK([for BLKGETSIZE64], [ac_cv_have_blkgetsize64],
 	if test $ac_cv_have_blkgetsize64 = yes; then
 		AC_DEFINE([HAVE_BLKGETSIZE64], [1], [Define to 1 if you have BLKGETSIZE64.])
 	fi)
+
+AC_CHECK_SIZEOF([long])
+AC_CHECK_SIZEOF([rlim_t],,[#include <sys/resource.h>])
 
 AC_PATH_PROG([PERL], [perl])
 

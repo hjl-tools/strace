@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *	$Id$
  */
 
 	{ 0,	0,	sys_setup,		"setup"		}, /* 0 */
@@ -217,7 +215,7 @@
 	{ 2,	TF,	sys_removexattr,	"removexattr"	}, /* 187 */
 	{ 2,	TF,	sys_removexattr,	"lremovexattr"	}, /* 188 */
 	{ 2,	TD,	sys_fremovexattr,	"fremovexattr"	}, /* 189 */
-	{ 2,	0,	sys_kill,		"tkill"		}, /* 190 */
+	{ 2,	TS,	sys_kill,		"tkill"		}, /* 190 */
 	{ 4,	TD|TN,	sys_sendfile64,		"sendfile64"	}, /* 191 */
 	{ 6,	0,	sys_futex,		"futex"		}, /* 192 */
 	{ 3,	0,	sys_sched_setaffinity,	"sched_setaffinity" },/* 193 */
@@ -249,7 +247,7 @@
 	{ 3,	TF,	sys_statfs64,		"statfs64"	}, /* 219 */
 	{ 3,	TD,	sys_fstatfs64,		"fstatfs64"	}, /* 220 */
 	{ 3,	TS,	sys_tgkill,		"tgkill"	}, /* 221 */
-	{ 5,	0,	printargs,		"SYS_222"	}, /* 222 */
+	{ 5,	0,	NULL,			NULL		}, /* 222 */
 	{ 2,	TF,	sys_utimes,		"utimes"	}, /* 223 */
 	{ 6,	TD,	sys_fadvise64_64,	"fadvise64_64"	}, /* 224 */
 	{ 3,	0,	printargs,		"cacheflush"	}, /* 225 */
@@ -309,5 +307,5 @@
 	{ 3,	TD|TS,	sys_signalfd,		"signalfd"	}, /* 279 */
 	{ 2,	TD,	sys_timerfd,		"timerfd_create" }, /* 280 */
 	{ 1,	TD,	sys_eventfd,		"eventfd"	}, /* 281 */
-	{ 5,	0,	printargs,		"SYS_282"	}, /* 282 */
+	{ 5,	0,	NULL,			NULL		}, /* 282 */
 	{ 2,	TD,	sys_setns,		"setns"		}, /* 283 */
